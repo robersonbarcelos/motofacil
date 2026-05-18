@@ -6,7 +6,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "palette": "motofacil",
   "accent": "#C9A84C",
   "accent2": "#C0392B",
-  "displayFont": "Bricolage Grotesque",
+  "displayFont": "Barlow Condensed",
   "bodyFont": "Manrope",
   "radius": 12,
   "brandName": "Moto Fácil",
@@ -229,16 +229,19 @@ function Hero({ t, p }) {
             <a className="btn btn--outline btn--lg" href="#venda">{t.ctaSecondary}</a>
           </div>
           <div className="hero__badges" data-reveal>
-            <span className="badge"><span className="badge__check" style={{ background: t.accent }}>✓</span> Sem consulta</span>
+            <span className="badge"><span className="badge__check" style={{ background: t.accent }}>✓</span> Crédito facilitado</span>
             <span className="badge"><span className="badge__check" style={{ background: t.accent }}>✓</span> Sai no mesmo dia</span>
             <span className="badge"><span className="badge__check" style={{ background: t.accent }}>✓</span> Venda e locação</span>
           </div>
         </div>
-        <div className="hero__art" data-reveal>
+        <div className="hero__art" data-reveal style={{ "--ry": "0px", "--rx": "32px" }}>
           <div className="hero__frame" style={{ borderRadius: t.radius * 1.4 }}>
-            <div className="hero__placeholder">
-              <span className="mono">[ HERO_IMG · moto + cliente saindo da loja · 1600×1800 ]</span>
-            </div>
+            <img
+              className="hero__img"
+              src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=80"
+              alt="Moto urbana — Moto Fácil Sertãozinho"
+              loading="eager"
+            />
             <div className="hero__chip hero__chip--1">
               <span className="mono">— estoque atualizado</span>
               <strong>Motos prontas pra sair</strong>
@@ -256,7 +259,7 @@ function Hero({ t, p }) {
 
 // ─── MARQUEE ─────────────────────────────────────────────────────────────────
 function Marquee({ accent2 }) {
-  const items = ["Sem consulta ao SPC", "Sem consulta ao Serasa", "Venda no crédito facilitado", "Locação disponível", "Sai no mesmo dia", "Sertãozinho · SP"];
+  const items = ["Sertãozinho · SP", "Venda no crédito facilitado", "Locação disponível", "Sai no mesmo dia", "Sem consulta ao SPC ou Serasa", "Foto na saída da loja"];
   const row = [...items, ...items, ...items];
   return (
     <div className="marq" aria-hidden>
@@ -272,36 +275,82 @@ function Marquee({ accent2 }) {
   );
 }
 
+// ─── FEATURE BELTS ───────────────────────────────────────────────────────────
+function FeatureBelts({ t }) {
+  const items = [
+    { num: "0", label: "Consultas ao SPC", desc: "Não verificamos seu histórico de crédito. Aqui você é uma pessoa, não um CPF." },
+    { num: "1", label: "Dia pra sair de moto", desc: "Converse hoje, assine hoje, saia de moto hoje mesmo. Foto na saída é tradição." },
+    { num: "2", label: "Opções: venda ou locação", desc: "Começa alugando e decide se compra depois. Sem pressão, sem fiador." },
+  ];
+  return (
+    <section className="feat-belts">
+      <div className="feat-belts__grid">
+        {items.map((it, i) => (
+          <div key={i} className="feat-belt" data-reveal style={{ "--d": `${i * 90}ms`, "--ry": "0px", "--rx": `${i === 1 ? "0px" : i === 0 ? "-28px" : "28px"}` }}>
+            <div className="feat-belt__num" style={{ color: t.accent2 }}>{it.num}</div>
+            <h4>{it.label}</h4>
+            <p>{it.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ─── PROCESS ─────────────────────────────────────────────────────────────────
+function StepIcon({ step, color }) {
+  const s = { fill: "none", stroke: color, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+  if (step === 1) return (
+    <svg viewBox="0 0 32 32" width="26" height="26">
+      <ellipse {...s} cx="16" cy="22" rx="12" ry="4"/>
+      <path {...s} d="M4 22c0-4 2-7 5-9l2-6h10l2 6c3 2 5 5 5 9"/>
+      <path {...s} d="M10 13h12M13 10l-1 3M19 10l1 3"/>
+    </svg>
+  );
+  if (step === 2) return (
+    <svg viewBox="0 0 32 32" width="26" height="26">
+      <path {...s} d="M4 8h18a2 2 0 012 2v9a2 2 0 01-2 2H10l-4 4V10a2 2 0 012-2z"/>
+      <path {...s} d="M10 14h8M10 18h5"/>
+    </svg>
+  );
+  return (
+    <svg viewBox="0 0 32 32" width="26" height="26">
+      <circle {...s} cx="12" cy="20" r="6"/>
+      <path {...s} d="M18 20h2l6-8-2-2-8 6"/>
+      <circle {...s} cx="12" cy="20" r="2"/>
+    </svg>
+  );
+}
+
 function Process({ t }) {
   const steps = [
-    { n: "01", t: "Você escolhe a moto", d: "Olha o catálogo aqui no site ou chama a gente no WhatsApp. A gente te ajuda a achar a moto certa pro seu dia.", emoji: "🏍️" },
-    { n: "02", t: "A gente conversa, sem consulta", d: "Sem consulta ao SPC. Sem Serasa. Sem juridiquês. A gente te conhece de verdade e mostra o valor que cabe no seu dia.", emoji: "💬" },
-    { n: "03", t: "Você sai daqui de moto", d: "Documentação resolvida na hora. Foto na saída da loja — tradição Moto Fácil. Você começa a usar hoje mesmo.", emoji: "🔑" },
+    { n: "01", t: "Você escolhe a moto", d: "Olha o catálogo aqui no site ou chama a gente no WhatsApp. A gente te ajuda a achar a moto certa pro seu dia.", step: 1 },
+    { n: "02", t: "A gente te conhece de verdade", d: "Sem juridiquês, sem paperada infinita. A gente conversa com você de pessoa pra pessoa e mostra o valor que cabe no seu dia.", step: 2 },
+    { n: "03", t: "Você sai daqui de moto", d: "Documentação resolvida na hora. Foto na saída da loja, tradição Moto Fácil. Você começa a usar hoje mesmo.", step: 3 },
   ];
   return (
     <section className="proc" id="como-funciona">
       <div className="section__head" data-reveal>
-        <span className="mono section__tag" style={{ color: t.accent }}>// COMO FUNCIONA</span>
+        <span className="section__tag" style={{ color: t.accent }}>COMO FUNCIONA</span>
         <h2 className="section__title">3 passos pra sair daqui<br/>com sua moto hoje.</h2>
-        <p className="section__sub">Sem consulta significa exatamente isso: a gente <strong>não consulta</strong>. Não tem letra miúda, não tem pegadinha. Você é a pessoa — não um CPF.</p>
+        <p className="section__sub">Não tem letra miúda, não tem pegadinha. Você é a pessoa, não um CPF.</p>
       </div>
       <div className="proc__grid">
         {steps.map((s, i) => (
-          <div key={s.n} className="step" data-reveal style={{ "--d": `${i * 100}ms`, borderRadius: t.radius }}>
+          <div key={s.n} className="step" data-reveal style={{ "--d": `${i * 100}ms`, "--ry": "32px", borderRadius: t.radius }}>
             <div className="step__head">
               <span className="step__n" style={{ color: t.accent }}>{s.n}</span>
-              <span className="step__emoji" aria-hidden>{s.emoji}</span>
+              <div className="step__icon" aria-hidden><StepIcon step={s.step} color={t.accent} /></div>
             </div>
             <h3 className="step__t">{s.t}</h3>
             <p className="step__d">{s.d}</p>
-            {i < 2 && <div className="step__arrow"><svg viewBox="0 0 32 12" width="32" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 6h28m-6-5l6 5-6 5"/></svg></div>}
+            {i < 2 && <div className="step__arrow"><svg viewBox="0 0 10 16" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 2l6 6-6 6"/></svg></div>}
           </div>
         ))}
       </div>
       <div className="proc__cta" data-reveal>
         <a className="btn btn--wa btn--lg" href={wa(t.whatsappNumber, "Olá! Quero entender melhor como funciona a compra/aluguel sem consulta.")} target="_blank" rel="noreferrer">
-          <SocialIcon kind="whatsapp" size={18} /> Quero saber se posso
+          <SocialIcon kind="whatsapp" size={18} /> Quero saber mais
         </a>
         <span className="mono proc__small">Uma mensagem no WhatsApp separa você da sua moto.</span>
       </div>
@@ -312,6 +361,14 @@ function Process({ t }) {
 function ProcIcon() { return null; }
 
 // ─── QUICK FILTERS ───────────────────────────────────────────────────────────
+const MOTO_IMGS = [
+  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
+  "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&q=80",
+  "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=600&q=80",
+  "https://images.unsplash.com/photo-1591197172062-c718f82aba20?w=600&q=80",
+  "https://images.unsplash.com/photo-1622185135505-2d795003994a?w=600&q=80",
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80",
+];
 const MODELS_SALE = [
   { name: "Honda Biz 110i", brand: "Honda", year: 2024, km: 0, price: 12990, color: "Vermelha", cat: "Urbana", pop: true },
   { name: "Honda CG 160 Start", brand: "Honda", year: 2023, km: 8500, price: 14500, color: "Preta", cat: "Urbana" },
@@ -338,7 +395,7 @@ function QuickFilters({ filters, setFilters, t, motoCount }) {
   return (
     <section className="filters" id="filtros">
       <div className="section__head" data-reveal>
-        <span className="mono section__tag" style={{ color: t.accent }}>// FILTRO RÁPIDO</span>
+        <span className="section__tag" style={{ color: t.accent }}>FILTRO RÁPIDO</span>
         <h2 className="section__title">Acha a moto certa<br/>em 30 segundos.</h2>
       </div>
       <div className="filters__bar" data-reveal style={{ borderRadius: t.radius }}>
@@ -399,7 +456,7 @@ function Sale({ t, p, filters }) {
     <section className="catalog" id="venda">
       <div className="section__head section__head--row" data-reveal>
         <div>
-          <span className="mono section__tag" style={{ color: t.accent }}>// MOTOS À VENDA</span>
+          <span className="section__tag" style={{ color: t.accent }}>MOTOS À VENDA</span>
           <h2 className="section__title">Estoque do dia.<br/>Pronto pra sair.</h2>
         </div>
         <a className="btn btn--outline" href={wa(t.whatsappNumber, "Olá! Quero ver o catálogo completo de motos à venda.")} target="_blank" rel="noreferrer">Ver catálogo completo</a>
@@ -423,10 +480,11 @@ function Sale({ t, p, filters }) {
 function MotoCard({ c, t, p, mode, idx }) {
   const priceLabel = mode === "sale" ? `R$ ${c.price.toLocaleString("pt-BR")}` : `R$ ${c.week}/sem`;
   const priceSmall = mode === "sale" ? "ou parcelas que cabem no seu dia" : `ou R$ ${c.day}/dia`;
+  const imgSrc = MOTO_IMGS[idx % MOTO_IMGS.length];
   return (
-    <article className="card" data-reveal style={{ "--d": `${idx * 60}ms`, borderRadius: t.radius }} data-cursor="hover">
+    <article className="card" data-reveal style={{ "--d": `${idx * 60}ms`, "--ry": "28px", borderRadius: t.radius }} data-cursor="hover">
       <div className="card__img">
-        <span className="mono">[ {c.name.toLowerCase()} ]</span>
+        <img src={imgSrc} alt={c.name} loading="lazy" />
         {c.pop && <span className="card__badge" style={{ background: t.accent, color: "#111" }}>POPULAR</span>}
         {mode === "rent" && <span className="card__badge card__badge--rent" style={{ background: t.accent2, color: "#fff" }}>ALUGUEL</span>}
       </div>
@@ -461,9 +519,9 @@ function Rental({ t, p }) {
     <section className="catalog catalog--rent" id="aluguel">
       <div className="section__head section__head--row" data-reveal>
         <div>
-          <span className="mono section__tag" style={{ color: t.accent2 }}>// MOTOS PARA ALUGUEL</span>
+          <span className="section__tag" style={{ color: t.accent2 }}>ALUGUEL</span>
           <h2 className="section__title">Começa usando.<br/>Depois decide se compra.</h2>
-          <p className="section__sub">Aluguel ideal pra motoboy, delivery e quem precisa rodar agora. Sem consulta, sem fiador, com manutenção inclusa.</p>
+          <p className="section__sub">Aluguel ideal pra motoboy, delivery e quem precisa rodar agora. Sem fiador, com manutenção inclusa.</p>
         </div>
         <a className="btn btn--outline" href={wa(t.whatsappNumber, "Olá! Quero alugar uma moto. Quais estão disponíveis?")} target="_blank" rel="noreferrer">Falar sobre aluguel</a>
       </div>
@@ -471,13 +529,13 @@ function Rental({ t, p }) {
         {MODELS_RENT.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="rent" idx={i} />)}
       </div>
       <div className="rent__incl" data-reveal style={{ borderRadius: t.radius }}>
-        <span className="mono rent__incl-tag">// INCLUSO NO ALUGUEL</span>
+        <span className="section__tag rent__incl-tag" style={{ color: "var(--accent2)" }}>INCLUSO NO ALUGUEL</span>
         <div className="rent__incl-grid">
           {[
             ["Manutenção", "preventiva e corretiva"],
             ["Documentação", "em dia e regularizada"],
             ["Troca de moto", "se der problema, troca na hora"],
-            ["Sem fiador", "sem consulta, sem burocracia"],
+            ["Sem fiador", "sem papelada, sem burocracia"],
           ].map(([h, d]) => (
             <div key={h} className="rent__incl-item">
               <span className="rent__incl-check" style={{ background: t.accent }}>✓</span>
@@ -504,12 +562,12 @@ function Features({ t }) {
   return (
     <section className="features">
       <div className="section__head" data-reveal>
-        <span className="mono section__tag" style={{ color: t.accent }}>// POR QUE A GENTE</span>
+        <span className="section__tag" style={{ color: t.accent }}>POR QUE A GENTE</span>
         <h2 className="section__title">O banco disse não.<br/>A Moto Fácil diz: vem cá.</h2>
       </div>
       <div className="features__grid">
         {items.map((f, i) => (
-          <article key={f.k} className="feat" data-reveal style={{ "--d": `${i * 80}ms` }}>
+          <article key={f.k} className="feat" data-reveal style={{ "--d": `${i * 80}ms`, "--ry": "0px", "--rs": "0.96" }}>
             <div className="feat__top">
               <span className="feat__k mono">{f.k}</span>
               <FeatIcon name={f.icon} color={t.accent} />
@@ -542,12 +600,12 @@ function Testimonials({ t }) {
   return (
     <section className="test" id="depoimentos">
       <div className="section__head" data-reveal>
-        <span className="mono section__tag" style={{ color: t.accent }}>// QUEM JÁ SAIU DAQUI DE MOTO</span>
+        <span className="section__tag" style={{ color: t.accent }}>DEPOIMENTOS</span>
         <h2 className="section__title">Cada história aqui<br/>começou com um "não" lá fora.</h2>
       </div>
       <div className="test__grid">
         {items.map((it, i) => (
-          <figure key={i} className="quote" data-reveal style={{ "--d": `${i * 70}ms`, borderRadius: t.radius }}>
+          <figure key={i} className="quote" data-reveal style={{ "--d": `${i * 70}ms`, "--rx": `${i % 2 === 0 ? "-20px" : "20px"}`, "--ry": "0px", borderRadius: t.radius }}>
             <div className="quote__stars">
               {Array.from({ length: 5 }).map((_, k) => (
                 <svg key={k} viewBox="0 0 24 24" width="14" height="14" fill={t.accent}><path d="M12 2l2.9 7.1L22 10l-5.5 4.7L18 22l-6-3.7L6 22l1.5-7.3L2 10l7.1-.9z"/></svg>
@@ -582,7 +640,7 @@ function FAQ({ t }) {
   return (
     <section className="faq">
       <div className="section__head" data-reveal>
-        <span className="mono section__tag" style={{ color: t.accent }}>// PERGUNTAS FREQUENTES</span>
+        <span className="section__tag" style={{ color: t.accent }}>PERGUNTAS FREQUENTES</span>
         <h2 className="section__title">Sem juridiquês.<br/>Sem letra miúda.</h2>
       </div>
       <div className="faq__list">
@@ -606,11 +664,11 @@ function FAQ({ t }) {
 function CTA({ t }) {
   return (
     <section className="cta" id="contato">
-      <div className="cta__box" data-reveal style={{ background: t.accent2, borderRadius: t.radius * 1.5 }}>
+      <div className="cta__box" data-reveal>
         <div className="cta__copy">
-          <span className="mono cta__tag">// PRÓXIMO PASSO</span>
+          <span className="section__tag cta__tag" style={{ color: "rgba(255,255,255,0.7)" }}>PRÓXIMO PASSO</span>
           <h2 className="cta__title">Uma mensagem<br/>separa você<br/>da sua moto.</h2>
-          <p className="cta__sub">Chama a gente no WhatsApp. Sem compromisso, sem consulta, sem julgamento. A gente entende seu momento e mostra o que dá pra fazer hoje.</p>
+          <p className="cta__sub">Chama a gente no WhatsApp. Sem compromisso, sem julgamento. A gente entende seu momento e mostra o que dá pra fazer hoje.</p>
           <div className="cta__socials">
             <a href={t.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="cta__soc"><SocialIcon kind="instagram" size={20} /></a>
             <a href={t.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="cta__soc"><SocialIcon kind="facebook" size={20} /></a>
@@ -620,7 +678,7 @@ function CTA({ t }) {
           <span className="mono cta__card-tag">Atendimento via WhatsApp</span>
           <div className="cta__card-num">{t.whatsappDisplay}</div>
           <div className="cta__card-hrs mono">{t.hours}</div>
-          <a className="btn btn--dark btn--full btn--lg" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer">
+          <a className="btn btn--wa btn--full btn--lg" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer">
             <SocialIcon kind="whatsapp" size={18} /> {t.ctaPrimary}
           </a>
           <span className="cta__card-small mono">Moto Fácil. Porque difícil já foi demais.</span>
@@ -641,7 +699,7 @@ function Stores({ t }) {
   return (
     <section className="stores" id="loja">
       <div className="section__head" data-reveal>
-        <span className="mono section__tag" style={{ color: t.accent }}>// NOSSA LOJA</span>
+        <span className="section__tag" style={{ color: t.accent }}>NOSSA LOJA</span>
         <h2 className="section__title">Vem tomar um café<br/>e olhar de perto.</h2>
       </div>
       <div className="stores__grid" data-reveal style={{ borderRadius: t.radius }}>
@@ -715,7 +773,7 @@ function Footer({ t }) {
       <div className="ftr__top">
         <div className="ftr__brand">
           <img src="assets/logo-motofacil.png" alt={t.brandName} className="ftr__logo" />
-          <p className="ftr__desc">Venda e locação de motos sem consulta ao SPC ou Serasa. Em Sertãozinho/SP.</p>
+          <p className="ftr__desc">Realizando o sonho de quem merecia mais. Sertãozinho/SP.</p>
           <div className="ftr__socials">
             <a href={t.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="ftr__soc"><SocialIcon kind="instagram" size={18} /></a>
             <a href={t.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="ftr__soc"><SocialIcon kind="facebook" size={18} /></a>
@@ -751,7 +809,7 @@ function Footer({ t }) {
       </div>
       <div className="ftr__bot mono">
         <span>© 2026 Moto Fácil Sertãozinho · todos os direitos reservados</span>
-        <span>Moto Fácil. Porque difícil já foi demais.</span>
+        <span>(16) 99147-1592 · WhatsApp</span>
       </div>
     </footer>
   );
@@ -814,12 +872,13 @@ function App() {
       <Nav t={t} />
       <main>
         <Hero t={t} p={p} />
-        {t.marquee && <Marquee accent2={t.accent2} />}
+        <FeatureBelts t={t} />
         {t.showProcess && <Process t={t} />}
+        {t.showFeatures && <Features t={t} />}
+        {t.marquee && <Marquee accent2={t.accent2} />}
         {t.showFilters && <QuickFilters filters={filters} setFilters={setFilters} t={t} motoCount={filtered.length} />}
         {t.showSale && <Sale t={t} p={p} filters={filters} />}
         {t.showRental && <Rental t={t} p={p} />}
-        {t.showFeatures && <Features t={t} />}
         {t.showTestimonials && <Testimonials t={t} />}
         {t.showFAQ && <FAQ t={t} />}
         {t.showCTA && <CTA t={t} />}
@@ -851,7 +910,7 @@ function App() {
 
         <TweakSection label="Tipografia" />
         <TweakSelect label="Display" value={t.displayFont} options={["Bricolage Grotesque", "Space Grotesk", "Archivo Black", "Anton"]} onChange={(v) => setTweak("displayFont", v)} />
-        <TweakSelect label="Corpo" value={t.bodyFont} options={["Manrope", "Inter", "DM Sans"]} onChange={(v) => setTweak("bodyFont", v)} />
+        <TweakSelect label="Corpo" value={t.bodyFont} options={["Manrope", "Inter", "DM Sans", "Space Grotesk"]} onChange={(v) => setTweak("bodyFont", v)} />
 
         <TweakSection label="Forma" />
         <TweakSlider label="Radius" value={t.radius} min={0} max={28} step={2} unit="px" onChange={(v) => setTweak("radius", v)} />
