@@ -1,6 +1,22 @@
 // app.jsx — Moto Fácil landing
 const { useState, useEffect, useRef, useMemo } = React;
 
+// Production stubs — tweaks-panel.js only loads on localhost
+if (typeof useTweaks === 'undefined') {
+  window.useTweaks   = (defaults) => [defaults, () => {}];
+  window.TweaksPanel = () => null;
+  window.TweakSection = () => null;
+  window.TweakText   = () => null;
+  window.TweakColor  = () => null;
+  window.TweakRadio  = () => null;
+  window.TweakSlider = () => null;
+  window.TweakToggle = () => null;
+  window.TweakSelect = () => null;
+  window.TweakNumber = () => null;
+  window.TweakButton = () => null;
+  window.TweakRow    = () => null;
+}
+
 // ─── TWEAK DEFAULTS ──────────────────────────────────────────────────────────
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "palette": "motofacil",
