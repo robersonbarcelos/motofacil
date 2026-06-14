@@ -191,7 +191,7 @@ function Nav({ t }) {
           {links.map((x) => (<a key={x.l} href={x.h}>{x.l}</a>))}
         </nav>
         <div className="nav__right">
-          <a className="btn btn--wa btn--sm" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer">
+          <a className="btn btn--wa btn--sm" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer" aria-label="Chamar no WhatsApp pelo menu">
             <SocialIcon kind="whatsapp" size={16} /> {t.ctaPrimary}
           </a>
         </div>
@@ -278,19 +278,9 @@ function HeroCarousel({ motos, t, p }) {
 
 // ─── HERO ────────────────────────────────────────────────────────────────────
 function Hero({ t, p, motos }) {
-  const blobRef = useRef(null);
-  useEffect(() => {
-    const on = () => {
-      if (!blobRef.current) return;
-      const y = scrollY;
-      blobRef.current.style.transform = `translate3d(0, ${y * 0.25}px, 0) rotate(${y * 0.02}deg)`;
-    };
-    addEventListener("scroll", on, { passive: true });
-    return () => removeEventListener("scroll", on);
-  }, []);
   return (
     <section className="hero" id="top">
-      <div className="hero__blob hero__blob--a" ref={blobRef} style={{ background: `radial-gradient(closest-side, ${t.accent}40, transparent 70%)` }} />
+      <div className="hero__blob hero__blob--a" style={{ background: `radial-gradient(closest-side, ${t.accent}40, transparent 70%)` }} />
       <div className="hero__blob hero__blob--b" style={{ background: `radial-gradient(closest-side, ${t.accent2}40, transparent 70%)` }} />
       <div className="hero__grid">
         <div className="hero__copy">
@@ -301,7 +291,7 @@ function Hero({ t, p, motos }) {
           <h1 className="hero__title" data-reveal>{t.headline}</h1>
           <p className="hero__sub" data-reveal>{t.subhead}</p>
           <div className="hero__ctas" data-reveal>
-            <a className="btn btn--wa btn--lg" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer">
+            <a className="btn btn--wa btn--lg" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer" aria-label="Chamar no WhatsApp agora">
               <SocialIcon kind="whatsapp" size={18} /> {t.ctaPrimary}
             </a>
             <a className="btn btn--outline btn--lg" href="#venda">{t.ctaSecondary}</a>

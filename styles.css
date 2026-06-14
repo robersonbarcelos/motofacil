@@ -157,7 +157,7 @@ html.reveal-armed .stores__grid[data-reveal]:not([data-revealed]) {
 .topbar__right { display: flex; align-items: center; gap: 10px; }
 .topbar__soc {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 50%;
+  min-width: 44px; min-height: 44px; border-radius: 50%;
   color: #1a1200;
   transition: color 0.2s, background 0.2s, transform 0.2s;
 }
@@ -216,7 +216,7 @@ html.reveal-armed .stores__grid[data-reveal]:not([data-revealed]) {
   background: var(--surface); border-bottom: 1px solid var(--line);
   padding: 20px var(--pad); display: flex; flex-direction: column; gap: 14px;
 }
-.nav__mobile a { font-size: 16px; }
+.nav__mobile a { font-size: 16px; min-height: 48px; display: flex; align-items: center; }
 
 /* ── BUTTONS ─────────────────────────────────────────────────────────────── */
 .btn {
@@ -876,7 +876,7 @@ html.reveal-armed .section__head[data-reveal][data-revealed] {
 .ftr__desc { color: var(--muted); font-size: 14px; max-width: 36ch; margin-bottom: 18px; }
 .ftr__socials { display: flex; gap: 10px; }
 .ftr__soc {
-  width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line);
+  width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line);
   display: grid; place-items: center; color: var(--muted);
   transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s;
 }
