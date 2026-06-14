@@ -249,7 +249,7 @@ function HeroCarousel({ motos, t, p }) {
         <div className="hcar__overlay" />
         <div className="hcar__info">
           <span className="hcar__tag" style={{ background: t.accent2 }}>EM DESTAQUE</span>
-          <h3 className="hcar__name">{moto.name}</h3>
+          <p className="hcar__name">{moto.name}</p>
           <div className="hcar__price">
             {moto.price > 0 && <span className="hcar__val">{moto.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</span>}
             {moto.year && <span className="hcar__year">{moto.year}</span>}
@@ -352,7 +352,7 @@ function FeatureBelts({ t }) {
           <div key={i} className="feat-belt" data-reveal style={{ "--d": `${i * 90}ms` }}>
             <span className="feat-belt__ghost" style={{ color: t.accent2 }} aria-hidden="true">{it.num}</span>
             <div className="feat-belt__num" style={{ color: t.accent2 }}>{it.num}</div>
-            <h4>{it.label}</h4>
+            <p className="feat-belt__title">{it.label}</p>
             <p>{it.desc}</p>
           </div>
         ))}
@@ -938,8 +938,10 @@ function App() {
   const p = PALETTES[t.palette] || PALETTES.motofacil;
   useReveal();
 
-  // Busca motos da API — mantém fallback nos arrays fixos se API falhar
+  // Busca motos da API — só no localhost (evita 404 no console em produção)
   useEffect(() => {
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isLocal) return;
     fetch("/api/motos?tipo=venda")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { if (data && data.length) setSaleMotos(data.filter(m => m.disponivel !== false).map(apiToSale)); })
