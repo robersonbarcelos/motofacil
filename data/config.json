@@ -1,0 +1,19 @@
+{
+  "venda": {
+    "preco": true,
+    "entrada": true,
+    "parcela": true,
+    "km": true,
+    "ano": true,
+    "cor": true,
+    "categoria": true
+  },
+  "aluguel": {
+    "preco_diaria": true,
+    "preco_mensal": true,
+    "km": false,
+    "ano": true,
+    "cor": true,
+    "categoria": true
+  }
+}

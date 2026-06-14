@@ -1,0 +1,19 @@
+{
+  "name": "projeto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx babel app.jsx -o app.js && npx babel tweaks-panel.jsx -o tweaks-panel.js && npx babel catalogo.jsx -o catalogo.js && npx terser app.js -o app.js --compress --mangle && npx terser tweaks-panel.js -o tweaks-panel.js --compress --mangle && npx terser catalogo.js -o catalogo.js --compress --mangle",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@babel/cli": "^7.29.7",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-react": "^7.29.7"
+  }
+}

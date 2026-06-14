@@ -18,7 +18,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "whatsappDisplay": "(16) 99147-1592",
   "instagram": "https://instagram.com/motoo_facil",
   "facebook": "https://facebook.com/motoofacil",
-  "address": "Sertãozinho · SP",
+  "address": "Av. N. Sra. Aparecida, 540 · Sertãozinho/SP",
   "hours": "Seg–Sex 8h–18h · Sáb 8h–12h",
   "cursor": false,
   "marquee": true,
@@ -52,7 +52,7 @@ function useReveal() {
       const vh = window.innerHeight;
       document.querySelectorAll("[data-reveal]:not([data-revealed])").forEach((el) => {
         const r = el.getBoundingClientRect();
-        if (r.top < vh * 0.95) reveal(el);
+        if (r.top < vh * 0.88 && r.bottom > 0) reveal(el);
       });
     };
     flush();
@@ -65,15 +65,12 @@ function useReveal() {
     } catch (_) {}
     const t1 = setTimeout(flush, 60);
     const t2 = setTimeout(flush, 400);
-    const t3 = setTimeout(() => {
-      document.querySelectorAll("[data-reveal]:not([data-revealed])").forEach(reveal);
-    }, 2500);
     const onScroll = () => flush();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", flush);
     return () => {
       if (io) io.disconnect();
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      clearTimeout(t1); clearTimeout(t2);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", flush);
     };
@@ -137,8 +134,6 @@ function TopBar({ t }) {
       <div className="topbar__inner">
         <div className="topbar__left">
           <span className="mono"><span className="topbar__pin" /> {t.address}</span>
-          <span className="mono topbar__sep">·</span>
-          <span className="mono">{t.hours}</span>
         </div>
         <div className="topbar__right">
           <a href={t.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="topbar__soc"><SocialIcon kind="instagram" size={15} /></a>
@@ -172,7 +167,9 @@ function Nav({ t }) {
     <header className={`nav ${scrolled ? "nav--scrolled" : ""}`}>
       <div className="nav__inner">
         <a href="#top" className="nav__brand" aria-label={t.brandName}>
-          <img src="assets/logo-motofacil.png" alt="Moto Fácil" className="nav__logo" />
+          <span className="nav__brandname">
+            MOTO<span style={{ color: t.accent2 }}>FÁCIL</span>
+          </span>
         </a>
         <nav className="nav__links" aria-label="Principal">
           {links.map((x) => (<a key={x.l} href={x.h}>{x.l}</a>))}
@@ -198,8 +195,73 @@ function Nav({ t }) {
   );
 }
 
+// ─── HERO CAROUSEL ───────────────────────────────────────────────────────────
+function HeroCarousel({ motos, t, p }) {
+  const featured = useMemo(() => {
+    const pop = motos.filter(m => m.pop);
+    return (pop.length >= 2 ? pop : motos).slice(0, 3);
+  }, [motos]);
+  const [idx, setIdx] = useState(0);
+  const [dir, setDir] = useState(1);
+
+  const go = (next) => {
+    setDir(next > idx ? 1 : -1);
+    setIdx(next);
+  };
+  const prev = () => go((idx - 1 + featured.length) % featured.length);
+  const next = () => go((idx + 1) % featured.length);
+
+  useEffect(() => {
+    if (featured.length < 2) return;
+    const id = setInterval(() => {
+      setDir(1);
+      setIdx(i => (i + 1) % featured.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [featured.length]);
+
+  if (!featured.length) return null;
+  const moto = featured[idx];
+  const imgSrc = (moto.fotos && moto.fotos.length > 0)
+    ? moto.fotos[0]
+    : MOTO_IMGS[idx % MOTO_IMGS.length];
+
+  return (
+    <div className="hcar" style={{ borderRadius: t.radius * 1.4 }}>
+      <div className="hcar__slide" key={idx}>
+        <img className="hcar__img" src={imgSrc} alt={moto.name} loading="eager" />
+        <div className="hcar__overlay" />
+        <div className="hcar__info">
+          <span className="hcar__tag" style={{ background: t.accent2 }}>EM DESTAQUE</span>
+          <h3 className="hcar__name">{moto.name}</h3>
+          <div className="hcar__price">
+            {moto.price > 0 && <span className="hcar__val">{moto.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</span>}
+            {moto.year && <span className="hcar__year">{moto.year}</span>}
+          </div>
+          <a className="btn btn--primary hcar__cta" href="#venda" style={{ background: t.accent, color: "#0A0A0A" }}>Ver moto</a>
+        </div>
+      </div>
+      {featured.length > 1 && (
+        <>
+          <button className="hcar__arrow hcar__arrow--prev" onClick={prev} aria-label="Anterior">
+            <svg viewBox="0 0 10 16" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2L2 8l6 6"/></svg>
+          </button>
+          <button className="hcar__arrow hcar__arrow--next" onClick={next} aria-label="Próxima">
+            <svg viewBox="0 0 10 16" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 2l6 6-6 6"/></svg>
+          </button>
+          <div className="hcar__dots">
+            {featured.map((_, i) => (
+              <button key={i} className={`hcar__dot${i === idx ? " hcar__dot--active" : ""}`} onClick={() => go(i)} aria-label={`Moto ${i + 1}`} style={i === idx ? { background: t.accent } : {}} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── HERO ────────────────────────────────────────────────────────────────────
-function Hero({ t, p }) {
+function Hero({ t, p, motos }) {
   const blobRef = useRef(null);
   useEffect(() => {
     const on = () => {
@@ -216,10 +278,10 @@ function Hero({ t, p }) {
       <div className="hero__blob hero__blob--b" style={{ background: `radial-gradient(closest-side, ${t.accent2}40, transparent 70%)` }} />
       <div className="hero__grid">
         <div className="hero__copy">
-          <div className="eyebrow" data-reveal>
-            <span className="dot" style={{ background: t.accent2 }} />
-            <span className="mono">VENDA · LOCAÇÃO · SEM CONSULTA AO SPC/SERASA</span>
-          </div>
+          <img src="assets/logo-motofacil.jpg" alt="Moto Fácil" className="hero__logo" data-reveal />
+          <span className="section__tag hero__tag" style={{ color: t.accent }} data-reveal>
+            VENDA · LOCAÇÃO · SEM CONSULTA AO SPC/SERASA
+          </span>
           <h1 className="hero__title" data-reveal>{t.headline}</h1>
           <p className="hero__sub" data-reveal>{t.subhead}</p>
           <div className="hero__ctas" data-reveal>
@@ -235,22 +297,7 @@ function Hero({ t, p }) {
           </div>
         </div>
         <div className="hero__art" data-reveal style={{ "--ry": "0px", "--rx": "32px" }}>
-          <div className="hero__frame" style={{ borderRadius: t.radius * 1.4 }}>
-            <img
-              className="hero__img"
-              src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=80"
-              alt="Moto urbana — Moto Fácil Sertãozinho"
-              loading="eager"
-            />
-            <div className="hero__chip hero__chip--1">
-              <span className="mono">— estoque atualizado</span>
-              <strong>Motos prontas pra sair</strong>
-            </div>
-            <div className="hero__chip hero__chip--2" style={{ background: t.accent2, color: "#fff" }}>
-              <strong>Aluguel também</strong>
-              <span className="mono">começa usando, depois decide</span>
-            </div>
-          </div>
+          <HeroCarousel motos={motos} t={t} p={p} />
         </div>
       </div>
     </section>
@@ -286,7 +333,8 @@ function FeatureBelts({ t }) {
     <section className="feat-belts">
       <div className="feat-belts__grid">
         {items.map((it, i) => (
-          <div key={i} className="feat-belt" data-reveal style={{ "--d": `${i * 90}ms`, "--ry": "0px", "--rx": `${i === 1 ? "0px" : i === 0 ? "-28px" : "28px"}` }}>
+          <div key={i} className="feat-belt" data-reveal style={{ "--d": `${i * 90}ms` }}>
+            <span className="feat-belt__ghost" style={{ color: t.accent2 }} aria-hidden="true">{it.num}</span>
             <div className="feat-belt__num" style={{ color: t.accent2 }}>{it.num}</div>
             <h4>{it.label}</h4>
             <p>{it.desc}</p>
@@ -324,23 +372,23 @@ function StepIcon({ step, color }) {
 
 function Process({ t }) {
   const steps = [
-    { n: "01", t: "Você escolhe a moto", d: "Olha o catálogo aqui no site ou chama a gente no WhatsApp. A gente te ajuda a achar a moto certa pro seu dia.", step: 1 },
-    { n: "02", t: "A gente te conhece de verdade", d: "Sem juridiquês, sem paperada infinita. A gente conversa com você de pessoa pra pessoa e mostra o valor que cabe no seu dia.", step: 2 },
-    { n: "03", t: "Você sai daqui de moto", d: "Documentação resolvida na hora. Foto na saída da loja, tradição Moto Fácil. Você começa a usar hoje mesmo.", step: 3 },
+    { n: "01", t: "Compra ou aluguel — você decide.", d: "Tem as duas opções: compra no crédito facilitado ou começa alugando e decide depois. Olha o catálogo ou chama no WhatsApp — a gente te ajuda a achar o que faz mais sentido pro seu bolso.", step: 1 },
+    { n: "02", t: "A gente conversa. Sem consulta ao SPC.", d: "Aqui não tem formulário de banco, não tem aprovação de crédito, não tem Serasa. A gente te escuta de verdade e mostra o valor que cabe no que você ganha hoje.", step: 2 },
+    { n: "03", t: "Você sai de moto. Hoje mesmo.", d: "Documentação resolvida na hora, no mesmo dia. Foto na saída da loja — tradição da casa. Você começa a usar antes de anoitecer.", step: 3 },
   ];
   return (
     <section className="proc" id="como-funciona">
       <div className="section__head" data-reveal>
         <span className="section__tag" style={{ color: t.accent }}>COMO FUNCIONA</span>
         <h2 className="section__title">3 passos pra sair daqui<br/>com sua moto hoje.</h2>
-        <p className="section__sub">Não tem letra miúda, não tem pegadinha. Você é a pessoa, não um CPF.</p>
+        <p className="section__sub">Sem burocracia, sem surpresa, sem consulta ao banco. Em qualquer etapa você pode chamar no WhatsApp.</p>
       </div>
       <div className="proc__grid">
         {steps.map((s, i) => (
-          <div key={s.n} className="step" data-reveal style={{ "--d": `${i * 100}ms`, "--ry": "32px", borderRadius: t.radius }}>
+          <div key={s.n} className="step" data-reveal style={{ "--d": `${i * 120}ms`, borderRadius: t.radius }}>
+            <span className="step__wm" aria-hidden>{s.n}</span>
             <div className="step__head">
               <span className="step__n" style={{ color: t.accent }}>{s.n}</span>
-              <div className="step__icon" aria-hidden><StepIcon step={s.step} color={t.accent} /></div>
             </div>
             <h3 className="step__t">{s.t}</h3>
             <p className="step__d">{s.d}</p>
@@ -358,24 +406,16 @@ function Process({ t }) {
   );
 }
 
-function ProcIcon() { return null; }
 
 // ─── QUICK FILTERS ───────────────────────────────────────────────────────────
-const MOTO_IMGS = [
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-  "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&q=80",
-  "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=600&q=80",
-  "https://images.unsplash.com/photo-1591197172062-c718f82aba20?w=600&q=80",
-  "https://images.unsplash.com/photo-1622185135505-2d795003994a?w=600&q=80",
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80",
-];
+const MOTO_IMGS = ["assets/moto-placeholder.jpg"];
 const MODELS_SALE = [
   { name: "Honda Biz 110i", brand: "Honda", year: 2024, km: 0, price: 12990, color: "Vermelha", cat: "Urbana", pop: true },
   { name: "Honda CG 160 Start", brand: "Honda", year: 2023, km: 8500, price: 14500, color: "Preta", cat: "Urbana" },
   { name: "Honda Fan 160", brand: "Honda", year: 2024, km: 0, price: 16900, color: "Cinza", cat: "Urbana" },
   { name: "Yamaha Factor 150", brand: "Yamaha", year: 2023, km: 12000, price: 14200, color: "Vermelha", cat: "Urbana" },
   { name: "Yamaha Fazer 250", brand: "Yamaha", year: 2024, km: 0, price: 21900, color: "Azul", cat: "Sport", pop: true },
-  { name: "Honda XRE 190 ABS", brand: "Honda", year: 2023, km: 15000, price: 19800, color: "Vermelha", cat: "Adventure" },
+  { name: "Honda XRE 190 ABS", brand: "Honda", year: 2023, km: 15000, price: 19800, color: "Vermelha", cat: "Adventure", pop: true },
 ];
 const MODELS_RENT = [
   { name: "Honda Biz 110i", brand: "Honda", week: 220, day: 45, cat: "Trabalho urbano", pop: true },
@@ -384,11 +424,12 @@ const MODELS_RENT = [
   { name: "Honda Pop 110i", brand: "Honda", week: 180, day: 38, cat: "Econômica" },
 ];
 
-function QuickFilters({ filters, setFilters, t, motoCount }) {
-  const allBrands = useMemo(() => ["Todas", ...new Set(MODELS_SALE.map(m => m.brand))], []);
-  const allYears = useMemo(() => ["Todos", ...new Set(MODELS_SALE.map(m => String(m.year)))], []);
-  const allColors = useMemo(() => ["Todas", ...new Set(MODELS_SALE.map(m => m.color))], []);
-  const allCats = useMemo(() => ["Todas", ...new Set(MODELS_SALE.map(m => m.cat))], []);
+function QuickFilters({ filters, setFilters, t, motoCount, motos }) {
+  const src = motos && motos.length ? motos : MODELS_SALE;
+  const allBrands = useMemo(() => ["Todas", ...new Set(src.map(m => m.brand))], [src]);
+  const allYears = useMemo(() => ["Todos", ...new Set(src.map(m => String(m.year)).filter(Boolean))], [src]);
+  const allColors = useMemo(() => ["Todas", ...new Set(src.map(m => m.color).filter(Boolean))], [src]);
+  const allCats = useMemo(() => ["Todas", ...new Set(src.map(m => m.cat).filter(Boolean))], [src]);
 
   const set = (k, v) => setFilters({ ...filters, [k]: v });
 
@@ -442,16 +483,8 @@ function Select({ value, onChange, options }) {
 }
 
 // ─── MOTOS À VENDA ───────────────────────────────────────────────────────────
-function Sale({ t, p, filters }) {
-  const filtered = useMemo(() => MODELS_SALE.filter((m) => {
-    if (filters.cat !== "Todas" && m.cat !== filters.cat) return false;
-    if (filters.brand !== "Todas" && m.brand !== filters.brand) return false;
-    if (filters.year !== "Todos" && String(m.year) !== filters.year) return false;
-    if (filters.color !== "Todas" && m.color !== filters.color) return false;
-    if (filters.km && m.km > Number(filters.km)) return false;
-    if (filters.price && m.price > Number(filters.price)) return false;
-    return true;
-  }), [filters]);
+function Sale({ t, p, filters, motos }) {
+  const list = motos || [];
   return (
     <section className="catalog" id="venda">
       <div className="section__head section__head--row" data-reveal>
@@ -459,11 +492,11 @@ function Sale({ t, p, filters }) {
           <span className="section__tag" style={{ color: t.accent }}>MOTOS À VENDA</span>
           <h2 className="section__title">Estoque do dia.<br/>Pronto pra sair.</h2>
         </div>
-        <a className="btn btn--outline" href={wa(t.whatsappNumber, "Olá! Quero ver o catálogo completo de motos à venda.")} target="_blank" rel="noreferrer">Ver catálogo completo</a>
+        <a className="btn btn--outline" href="/catalogo.html?tipo=venda">Ver catálogo completo</a>
       </div>
       <div className="catalog__grid">
-        {filtered.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="sale" idx={i} />)}
-        {filtered.length === 0 && (
+        {list.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="sale" idx={i} />)}
+        {list.length === 0 && (
           <div className="catalog__empty" data-reveal>
             <span className="mono">Nenhuma moto bate com esses filtros.</span>
             <p>Chama no WhatsApp que a gente encontra a moto certa pra você.</p>
@@ -478,11 +511,13 @@ function Sale({ t, p, filters }) {
 }
 
 function MotoCard({ c, t, p, mode, idx }) {
-  const priceLabel = mode === "sale" ? `R$ ${c.price.toLocaleString("pt-BR")}` : `R$ ${c.week}/sem`;
-  const priceSmall = mode === "sale" ? "ou parcelas que cabem no seu dia" : `ou R$ ${c.day}/dia`;
-  const imgSrc = MOTO_IMGS[idx % MOTO_IMGS.length];
+  const priceLabel = mode === "sale" ? `R$ ${c.price.toLocaleString("pt-BR")}` : `R$ ${c.month ? c.month.toLocaleString("pt-BR") + "/mês" : c.week + "/sem"}`;
+  const priceSmall = mode === "sale"
+    ? (c.parcela ? `a partir de R$ ${c.parcela}/mês` : "ou parcelas que cabem no seu dia")
+    : `ou R$ ${c.day}/dia`;
+  const imgSrc = (c.fotos && c.fotos.length > 0) ? c.fotos[0] : MOTO_IMGS[idx % MOTO_IMGS.length];
   return (
-    <article className="card" data-reveal style={{ "--d": `${idx * 60}ms`, "--ry": "28px", borderRadius: t.radius }} data-cursor="hover">
+    <article className="card" data-reveal style={{ "--d": `${idx * 80}ms`, borderRadius: t.radius }} data-cursor="hover">
       <div className="card__img">
         <img src={imgSrc} alt={c.name} loading="lazy" />
         {c.pop && <span className="card__badge" style={{ background: t.accent, color: "#111" }}>POPULAR</span>}
@@ -514,7 +549,8 @@ function MotoCard({ c, t, p, mode, idx }) {
 }
 
 // ─── MOTOS PARA ALUGUEL ──────────────────────────────────────────────────────
-function Rental({ t, p }) {
+function Rental({ t, p, motos }) {
+  const list = motos || MODELS_RENT;
   return (
     <section className="catalog catalog--rent" id="aluguel">
       <div className="section__head section__head--row" data-reveal>
@@ -523,10 +559,10 @@ function Rental({ t, p }) {
           <h2 className="section__title">Começa usando.<br/>Depois decide se compra.</h2>
           <p className="section__sub">Aluguel ideal pra motoboy, delivery e quem precisa rodar agora. Sem fiador, com manutenção inclusa.</p>
         </div>
-        <a className="btn btn--outline" href={wa(t.whatsappNumber, "Olá! Quero alugar uma moto. Quais estão disponíveis?")} target="_blank" rel="noreferrer">Falar sobre aluguel</a>
+        <a className="btn btn--outline" href="/catalogo.html?tipo=aluguel">Ver motos para aluguel</a>
       </div>
       <div className="catalog__grid">
-        {MODELS_RENT.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="rent" idx={i} />)}
+        {list.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="rent" idx={i} />)}
       </div>
       <div className="rent__incl" data-reveal style={{ borderRadius: t.radius }}>
         <span className="section__tag rent__incl-tag" style={{ color: "var(--accent2)" }}>INCLUSO NO ALUGUEL</span>
@@ -554,24 +590,41 @@ function Rental({ t, p }) {
 // ─── FEATURES ────────────────────────────────────────────────────────────────
 function Features({ t }) {
   const items = [
-    { k: "01", t: "Sem consulta", d: "A gente não consulta SPC nem Serasa. Aqui você não é um CPF, você é uma pessoa com um sonho.", icon: "shield" },
-    { k: "02", t: "Sai no mesmo dia", d: "Processo simples, sem juridiquês. Documentação resolvida na hora — foto na saída da loja é tradição.", icon: "clock" },
-    { k: "03", t: "Valor que cabe", d: "Sem letra miúda. A gente mostra o valor real que cabe no seu dia, não no script do banco.", icon: "wallet" },
-    { k: "04", t: "Venda e locação", d: "Compra com crédito facilitado ou aluguel pra começar usando. Você decide o que faz mais sentido.", icon: "swap" },
+    {
+      k: "01",
+      t: "Loja em Sertãozinho. Vem conhecer.",
+      d: "Av. Nossa Senhora Aparecida, 540. Vem ver a moto de perto, tomar um café, fazer sua pergunta olho no olho.",
+      icon: "store",
+    },
+    {
+      k: "02",
+      t: "Quem teve o crédito negado no banco é bem-vindo.",
+      d: "Se você trabalha e tem renda, a gente conversa. A gente ouve a situação e vê o que cabe no seu bolso.",
+      icon: "handshake",
+    },
+    {
+      k: "03",
+      t: "O que você viu é o que você leva.",
+      d: "Nenhuma sai da loja sem revisão. Você não leva surpresa.",
+      icon: "wrench",
+    },
+    {
+      k: "04",
+      t: "Pós-venda no WhatsApp.",
+      d: "Qualquer dúvida depois da compra ou do aluguel — chama. A gente responde.",
+      icon: "chat",
+    },
   ];
   return (
     <section className="features">
       <div className="section__head" data-reveal>
-        <span className="section__tag" style={{ color: t.accent }}>POR QUE A GENTE</span>
-        <h2 className="section__title">O banco disse não.<br/>A Moto Fácil diz: vem cá.</h2>
+        <span className="section__tag" style={{ color: t.accent }}>POR QUE A MOTO FÁCIL</span>
+        <h2 className="section__title">Empresa de bairro.<br/>Compromisso real.</h2>
       </div>
       <div className="features__grid">
         {items.map((f, i) => (
-          <article key={f.k} className="feat" data-reveal style={{ "--d": `${i * 80}ms`, "--ry": "0px", "--rs": "0.96" }}>
-            <div className="feat__top">
-              <span className="feat__k mono">{f.k}</span>
-              <FeatIcon name={f.icon} color={t.accent} />
-            </div>
+          <article key={f.k} className="feat" data-reveal style={{ "--d": `${i * 100}ms` }}>
+            <span className="feat__k mono" style={{ color: t.accent }}>{f.k}</span>
             <h3 className="feat__t">{f.t}</h3>
             <p className="feat__d">{f.d}</p>
           </article>
@@ -582,10 +635,10 @@ function Features({ t }) {
 }
 function FeatIcon({ name, color }) {
   const s = { fill: "none", stroke: color, strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
-  if (name === "shield") return <svg viewBox="0 0 32 32" width="32" height="32"><path {...s} d="M16 4l11 4v8c0 7-5 11-11 12-6-1-11-5-11-12V8l11-4z"/><path {...s} d="M11 16l4 4 7-7"/></svg>;
-  if (name === "clock")  return <svg viewBox="0 0 32 32" width="32" height="32"><circle {...s} cx="16" cy="16" r="12"/><path {...s} d="M16 8v8l5 3"/></svg>;
-  if (name === "wallet") return <svg viewBox="0 0 32 32" width="32" height="32"><rect {...s} x="4" y="9" width="24" height="17" rx="3"/><path {...s} d="M4 13h24M22 18h3"/></svg>;
-  if (name === "swap")   return <svg viewBox="0 0 32 32" width="32" height="32"><path {...s} d="M6 11h18l-4-4M26 21H8l4 4"/></svg>;
+  if (name === "store")     return <svg viewBox="0 0 32 32" width="32" height="32"><path {...s} d="M4 13V28h24V13"/><path {...s} d="M2 13h28M10 28V20h12v8"/><path {...s} d="M6 13V8l4-4h12l4 4v5"/></svg>;
+  if (name === "handshake") return <svg viewBox="0 0 32 32" width="32" height="32"><path {...s} d="M2 18l6 6 5-5 4 2 5-1 8-8"/><path {...s} d="M21 10l-5 5-4-2-4 4"/><path {...s} d="M26 4l4 4-4 4-4-4 4-4z"/><path {...s} d="M6 20l-4 4 4 4 4-4-4-4z"/></svg>;
+  if (name === "wrench")    return <svg viewBox="0 0 32 32" width="32" height="32"><path {...s} d="M20 4a8 8 0 0 1 2 13L9 30a3 3 0 0 1-4-4L18 13A8 8 0 0 1 20 4z"/><path {...s} d="M20 4l4 4-2 2-4-4 2-2z"/></svg>;
+  if (name === "chat")      return <svg viewBox="0 0 32 32" width="32" height="32"><path {...s} d="M28 6H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6l4 5 4-5h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><path {...s} d="M10 14h12M10 19h7"/></svg>;
   return null;
 }
 
@@ -605,7 +658,7 @@ function Testimonials({ t }) {
       </div>
       <div className="test__grid">
         {items.map((it, i) => (
-          <figure key={i} className="quote" data-reveal style={{ "--d": `${i * 70}ms`, "--rx": `${i % 2 === 0 ? "-20px" : "20px"}`, "--ry": "0px", borderRadius: t.radius }}>
+          <figure key={i} className="quote" data-reveal style={{ "--d": `${i * 90}ms`, borderRadius: t.radius }}>
             <div className="quote__stars">
               {Array.from({ length: 5 }).map((_, k) => (
                 <svg key={k} viewBox="0 0 24 24" width="14" height="14" fill={t.accent}><path d="M12 2l2.9 7.1L22 10l-5.5 4.7L18 22l-6-3.7L6 22l1.5-7.3L2 10l7.1-.9z"/></svg>
@@ -677,7 +730,6 @@ function CTA({ t }) {
         <div className="cta__card" style={{ borderRadius: t.radius }}>
           <span className="mono cta__card-tag">Atendimento via WhatsApp</span>
           <div className="cta__card-num">{t.whatsappDisplay}</div>
-          <div className="cta__card-hrs mono">{t.hours}</div>
           <a className="btn btn--wa btn--full btn--lg" href={wa(t.whatsappNumber)} target="_blank" rel="noreferrer">
             <SocialIcon kind="whatsapp" size={18} /> {t.ctaPrimary}
           </a>
@@ -690,12 +742,10 @@ function CTA({ t }) {
 
 // ─── STORES / MAP ────────────────────────────────────────────────────────────
 function Stores({ t }) {
-  // Sertãozinho/SP centro — coords aproximadas
-  const lat = -21.1376, lon = -47.9905;
-  const delta = 0.012;
-  const bbox = `${lon - delta},${lat - delta * 0.6},${lon + delta},${lat + delta * 0.6}`;
-  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
-  const directions = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+  const addr = "Av. Nossa Senhora Aparecida, 540, Sertãozinho, SP, Brasil";
+  const addrQ = encodeURIComponent(addr);
+  const mapSrc = `https://maps.google.com/maps?q=${addrQ}&output=embed&z=17`;
+  const directions = `https://maps.google.com/?q=${addrQ}`;
   return (
     <section className="stores" id="loja">
       <div className="section__head" data-reveal>
@@ -716,8 +766,8 @@ function Stores({ t }) {
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2a8 8 0 00-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 00-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
               </span>
               <div>
-                <strong>{t.address}</strong>
-                <span className="mono">Bairro · Sertãozinho/SP</span>
+                <strong>Av. Nossa Senhora Aparecida, 540</strong>
+                <span className="mono">Sertãozinho · SP</span>
               </div>
             </li>
             <li className="stores__row">
@@ -741,7 +791,7 @@ function Stores({ t }) {
           </ul>
           <div className="stores__ctas">
             <a className="btn btn--wa btn--full" href={wa(t.whatsappNumber, "Olá! Quero passar na loja. Estão atendendo agora?")} target="_blank" rel="noreferrer">
-              <SocialIcon kind="whatsapp" size={16} /> Avisa que tô indo
+              <SocialIcon kind="whatsapp" size={16} /> Chamar no WhatsApp
             </a>
             <a className="btn btn--outline btn--full" href={directions} target="_blank" rel="noreferrer">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
@@ -772,7 +822,7 @@ function Footer({ t }) {
     <footer className="ftr">
       <div className="ftr__top">
         <div className="ftr__brand">
-          <img src="assets/logo-motofacil.png" alt={t.brandName} className="ftr__logo" />
+          <img src="assets/logo-motofacil.jpg" alt={t.brandName} className="ftr__logo" />
           <p className="ftr__desc">Realizando o sonho de quem merecia mais. Sertãozinho/SP.</p>
           <div className="ftr__socials">
             <a href={t.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="ftr__soc"><SocialIcon kind="instagram" size={18} /></a>
@@ -832,12 +882,57 @@ function FloatingWhats({ t }) {
   );
 }
 
+// ─── Mapear moto da API para o formato dos cards da landing ─────────────────
+function apiToSale(m) {
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  return {
+    name:  `${m.marca} ${m.modelo}`,
+    brand: m.marca,
+    year:  m.ano,
+    km:    m.km || 0,
+    price: m.preco || 0,
+    color: m.cor || "",
+    cat:   cap(m.categoria || ""),
+    pop:   !!m.destaque,
+    fotos: m.fotos || [],
+    obs:   m.observacoes || "",
+    entrada: m.entrada,
+    parcela: m.parcela,
+  };
+}
+function apiToRent(m) {
+  return {
+    name:  `${m.marca} ${m.modelo}`,
+    brand: m.marca,
+    day:   m.preco_diaria || 0,
+    week:  m.preco_mensal ? Math.round(m.preco_mensal / 4) : 0,
+    month: m.preco_mensal || 0,
+    cat:   m.observacoes || m.categoria || "",
+    pop:   !!m.destaque,
+    fotos: m.fotos || [],
+  };
+}
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [filters, setFilters] = useState({ cat: "Todas", brand: "Todas", year: "Todos", color: "Todas", km: "", price: "" });
+  const [saleMotos, setSaleMotos] = useState(MODELS_SALE);
+  const [rentMotos, setRentMotos] = useState(MODELS_RENT);
   const p = PALETTES[t.palette] || PALETTES.motofacil;
   useReveal();
+
+  // Busca motos da API — mantém fallback nos arrays fixos se API falhar
+  useEffect(() => {
+    fetch("/api/motos?tipo=venda")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data && data.length) setSaleMotos(data.filter(m => m.disponivel !== false).map(apiToSale)); })
+      .catch(() => {});
+    fetch("/api/motos?tipo=aluguel")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data && data.length) setRentMotos(data.filter(m => m.disponivel !== false).map(apiToRent)); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const r = document.documentElement;
@@ -856,7 +951,7 @@ function App() {
     document.body.classList.toggle("cursor-on", !!t.cursor);
   }, [t, p]);
 
-  const filtered = useMemo(() => MODELS_SALE.filter((m) => {
+  const filtered = useMemo(() => saleMotos.filter((m) => {
     if (filters.cat !== "Todas" && m.cat !== filters.cat) return false;
     if (filters.brand !== "Todas" && m.brand !== filters.brand) return false;
     if (filters.year !== "Todos" && String(m.year) !== filters.year) return false;
@@ -864,21 +959,21 @@ function App() {
     if (filters.km && m.km > Number(filters.km)) return false;
     if (filters.price && m.price > Number(filters.price)) return false;
     return true;
-  }), [filters]);
+  }), [filters, saleMotos]);
 
   return (
     <>
       <TopBar t={t} />
       <Nav t={t} />
       <main>
-        <Hero t={t} p={p} />
+        <Hero t={t} p={p} motos={saleMotos} />
         <FeatureBelts t={t} />
+        {t.marquee && <Marquee accent2={t.accent2} />}
+        {t.showFilters && <QuickFilters filters={filters} setFilters={setFilters} t={t} motoCount={filtered.length} motos={saleMotos} />}
+        {t.showSale && <Sale t={t} p={p} filters={filters} motos={filtered} />}
+        {t.showRental && <Rental t={t} p={p} motos={rentMotos} />}
         {t.showProcess && <Process t={t} />}
         {t.showFeatures && <Features t={t} />}
-        {t.marquee && <Marquee accent2={t.accent2} />}
-        {t.showFilters && <QuickFilters filters={filters} setFilters={setFilters} t={t} motoCount={filtered.length} />}
-        {t.showSale && <Sale t={t} p={p} filters={filters} />}
-        {t.showRental && <Rental t={t} p={p} />}
         {t.showTestimonials && <Testimonials t={t} />}
         {t.showFAQ && <FAQ t={t} />}
         {t.showCTA && <CTA t={t} />}

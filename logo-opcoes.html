@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Logo · 3 Opções</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #080705; color: #fff; font-family: "Manrope", sans-serif; }
+
+.grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 3px; min-height: 100vh;
+}
+
+.opt {
+  background: #0A0A0A;
+  padding: 48px 40px 40px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+
+/* ambient blob */
+.opt::before {
+  content: ""; position: absolute;
+  top: -10%; right: -10%; width: 55%; height: 55%;
+  background: radial-gradient(closest-side, #C9A84C28, transparent 70%);
+  filter: blur(40px); pointer-events: none;
+}
+.opt::after {
+  content: ""; position: absolute;
+  bottom: 5%; left: -15%; width: 45%; height: 45%;
+  background: radial-gradient(closest-side, #C0392B28, transparent 70%);
+  filter: blur(40px); pointer-events: none;
+}
+
+.opt-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #C9A84C;
+  border: 1px solid #2a2620; border-radius: 6px;
+  padding: 5px 10px; display: inline-block; margin-bottom: 40px;
+  position: relative; z-index: 1;
+}
+
+.copy { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+.tag {
+  font-family: "Manrope", sans-serif; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; color: #C9A84C;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.tag::before {
+  content: ""; display: inline-block; height: 2px; width: 22px;
+  background: currentColor; flex-shrink: 0;
+}
+
+h1 {
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 800; font-size: clamp(38px, 3.5vw, 52px);
+  line-height: 0.94; letter-spacing: 0.01em;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+
+.sub { font-size: 14px; color: #9E9E9E; max-width: 42ch; line-height: 1.5; }
+
+/* ─── OPÇÃO A — fade mask + glow ──────────────── */
+.opt-a .logo-wrap {
+  margin-bottom: 28px;
+}
+.opt-a .logo-wrap img {
+  height: 110px; width: auto; display: block;
+  mix-blend-mode: lighten;
+  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  filter: drop-shadow(0 0 28px oklch(75% 0.16 65 / 0.45));
+}
+
+/* ─── OPÇÃO B — wordmark tipográfico puro ─────── */
+.opt-b .logo-word {
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 800; font-size: 64px;
+  line-height: 1; letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 24px;
+}
+.opt-b .logo-word span { color: #C0392B; }
+
+/* ─── OPÇÃO C — logo dupla: grande watermark + pequena funcional ── */
+.opt-c { position: relative; }
+.opt-c .logo-bg {
+  position: absolute; top: 20px; right: -20px;
+  height: 220px; width: auto; opacity: 0.12;
+  pointer-events: none; z-index: 0;
+  mix-blend-mode: lighten;
+  filter: grayscale(0.4);
+}
+.opt-c .logo-sm {
+  height: 72px; width: auto; display: block;
+  margin-bottom: 28px; position: relative; z-index: 1;
+  mix-blend-mode: lighten;
+}
+
+/* ─── descrição ────────────────────────────────── */
+.desc {
+  margin-top: 32px; padding-top: 20px;
+  border-top: 1px solid #1e1c18;
+  position: relative; z-index: 1;
+}
+.desc strong {
+  font-size: 13px; font-weight: 700; color: #fff;
+  display: block; margin-bottom: 6px;
+}
+.desc p { font-size: 12px; color: #7a7060; line-height: 1.6; }
+
+.headline-preview {
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 800; font-size: 14px;
+  color: #555; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 12px 0; display: block;
+}
+</style>
+</head>
+<body>
+<div class="grid">
+
+  <!-- OPÇÃO A -->
+  <div class="opt opt-a">
+    <span class="opt-label">Opção A · Fade + Glow</span>
+    <div class="copy">
+      <div class="logo-wrap">
+        <img src="assets/logo-motofacil.png" alt="Moto Fácil" />
+      </div>
+      <div class="tag">VENDA · LOCAÇÃO · SEM CONSULTA AO SPC/SERASA</div>
+      <h1>O banco fechou a porta.<br/>A Moto Fácil<br/>abriu a garagem.</h1>
+      <p class="sub">Aqui você não é um CPF. Você é uma pessoa com um sonho.</p>
+    </div>
+    <div class="desc">
+      <strong>Logo grande com fade na base</strong>
+      <p>PNG 110px. Máscara de gradiente dissolve o rodapé da logo no fundo escuro. Glow dourado suave cria atmosfera. Integração orgânica, visual cinematográfico.</p>
+    </div>
+  </div>
+
+  <!-- OPÇÃO B -->
+  <div class="opt opt-b">
+    <span class="opt-label">Opção B · Wordmark tipográfico</span>
+    <div class="copy">
+      <div class="logo-word">MOTO<span>FÁCIL</span></div>
+      <div class="tag">VENDA · LOCAÇÃO · SEM CONSULTA AO SPC/SERASA</div>
+      <h1>O banco fechou a porta.<br/>A Moto Fácil<br/>abriu a garagem.</h1>
+      <p class="sub">Aqui você não é um CPF. Você é uma pessoa com um sonho.</p>
+    </div>
+    <div class="desc">
+      <strong>Sem PNG — tipografia pura</strong>
+      <p>Remove dependência da imagem. Barlow Condensed 800 em 64px, branco + vermelho. Consistente com o restante da página. Sempre nítido, zero problema de escala ou fundo.</p>
+    </div>
+  </div>
+
+  <!-- OPÇÃO C -->
+  <div class="opt opt-c">
+    <span class="opt-label">Opção C · Watermark + funcional</span>
+    <img class="logo-bg" src="assets/logo-motofacil.png" alt="" aria-hidden="true" />
+    <div class="copy">
+      <img class="logo-sm" src="assets/logo-motofacil.png" alt="Moto Fácil" />
+      <div class="tag">VENDA · LOCAÇÃO · SEM CONSULTA AO SPC/SERASA</div>
+      <h1>O banco fechou a porta.<br/>A Moto Fácil<br/>abriu a garagem.</h1>
+      <p class="sub">Aqui você não é um CPF. Você é uma pessoa com um sonho.</p>
+    </div>
+    <div class="desc">
+      <strong>Logo dupla: atmosfera + identidade</strong>
+      <p>Versão grande (220px, 5% opacidade) como textura decorativa no canto. Versão funcional 52px com qualidade. Cria profundidade sem poluir o layout.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

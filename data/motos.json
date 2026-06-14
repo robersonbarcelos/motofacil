@@ -1,0 +1,198 @@
+[
+  {
+    "id": "seed-venda-001",
+    "tipo": "venda",
+    "marca": "Honda",
+    "modelo": "Biz 110i",
+    "ano": 2024,
+    "km": 0,
+    "preco": 12990,
+    "entrada": 2000,
+    "parcela": 350,
+    "cor": "Vermelha",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": true,
+    "observacoes": "0 km · IPVA 2025 pago",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-venda-002",
+    "tipo": "venda",
+    "marca": "Honda",
+    "modelo": "CG 160 Start",
+    "ano": 2023,
+    "km": 8500,
+    "preco": 14500,
+    "entrada": 2500,
+    "parcela": 380,
+    "cor": "Preta",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": false,
+    "observacoes": "Revisão em dia",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-venda-003",
+    "tipo": "venda",
+    "marca": "Honda",
+    "modelo": "Fan 160",
+    "ano": 2024,
+    "km": 0,
+    "preco": 16900,
+    "entrada": 3000,
+    "parcela": 450,
+    "cor": "Cinza",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": false,
+    "observacoes": "0 km",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-venda-004",
+    "tipo": "venda",
+    "marca": "Yamaha",
+    "modelo": "Factor 150",
+    "ano": 2023,
+    "km": 12000,
+    "preco": 14200,
+    "entrada": 2500,
+    "parcela": 375,
+    "cor": "Vermelha",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": false,
+    "observacoes": "",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-venda-005",
+    "tipo": "venda",
+    "marca": "Yamaha",
+    "modelo": "Fazer 250",
+    "ano": 2024,
+    "km": 0,
+    "preco": 21900,
+    "entrada": 4000,
+    "parcela": 580,
+    "cor": "Azul",
+    "categoria": "esportiva",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": true,
+    "observacoes": "0 km · ABS incluso",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-venda-006",
+    "tipo": "venda",
+    "marca": "Honda",
+    "modelo": "XRE 190 ABS",
+    "ano": 2023,
+    "km": 15000,
+    "preco": 19800,
+    "entrada": 3500,
+    "parcela": 520,
+    "cor": "Vermelha",
+    "categoria": "trail",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": true,
+    "observacoes": "ABS · Revisão em dia",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-aluguel-001",
+    "tipo": "aluguel",
+    "marca": "Honda",
+    "modelo": "Biz 110i",
+    "ano": 2024,
+    "km": 0,
+    "preco_diaria": 45,
+    "preco_mensal": 900,
+    "cor": "Vermelha",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": true,
+    "observacoes": "Manutenção inclusa · Sem fiador",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-aluguel-002",
+    "tipo": "aluguel",
+    "marca": "Honda",
+    "modelo": "CG 160 Cargo",
+    "ano": 2023,
+    "km": 0,
+    "preco_diaria": 55,
+    "preco_mensal": 1100,
+    "cor": "Preta",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": false,
+    "observacoes": "Ideal para delivery · Manutenção inclusa",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-aluguel-003",
+    "tipo": "aluguel",
+    "marca": "Yamaha",
+    "modelo": "Factor 150",
+    "ano": 2023,
+    "km": 0,
+    "preco_diaria": 50,
+    "preco_mensal": 1000,
+    "cor": "Vermelha",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": false,
+    "observacoes": "Manutenção inclusa",
+    "created_at": "2026-01-01T00:00:00"
+  },
+  {
+    "id": "seed-aluguel-004",
+    "tipo": "aluguel",
+    "marca": "Honda",
+    "modelo": "Pop 110i",
+    "ano": 2024,
+    "km": 0,
+    "preco_diaria": 38,
+    "preco_mensal": 700,
+    "cor": "Branca",
+    "categoria": "urbana",
+    "fotos": [
+      "assets/moto-placeholder.jpg"
+    ],
+    "disponivel": true,
+    "destaque": false,
+    "observacoes": "Econômica · Ideal para começar",
+    "created_at": "2026-01-01T00:00:00"
+  }
+]

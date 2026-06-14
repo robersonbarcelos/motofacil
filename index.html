@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <!-- ── Título e descrição ─────────────────────────────────────── -->
+  <title>Moto Fácil · Sertãozinho/SP</title>
+  <meta name="description" content="Venda e locação de motos em Sertãozinho/SP. Sem consulta ao SPC ou Serasa. Crédito facilitado, sai no mesmo dia. (16) 99147-1592." />
+
+  <!-- ── Favicon ────────────────────────────────────────────────── -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" href="favicon.svg" sizes="32x32" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
+
+  <!-- ── Open Graph (WhatsApp, Facebook, LinkedIn) ─────────────── -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   content="Moto Fácil Sertãozinho" />
+  <meta property="og:title"       content="Moto Fácil · Sertãozinho/SP" />
+  <meta property="og:description" content="Venda e locação de motos sem consulta ao SPC ou Serasa. Crédito facilitado, sai no mesmo dia." />
+  <meta property="og:image"       content="https://projeto-kappa-ivory.vercel.app/assets/og-image.jpg" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url"         content="https://motofacilsertaozinho.com.br" />
+
+  <!-- ── Twitter/X card ────────────────────────────────────────── -->
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Moto Fácil · Sertãozinho/SP" />
+  <meta name="twitter:description" content="Venda e locação de motos sem consulta ao SPC ou Serasa." />
+  <meta name="twitter:image"       content="https://projeto-kappa-ivory.vercel.app/assets/og-image.jpg" />
+
+  <!-- ── Tema do browser (Android Chrome) ─────────────────────── -->
+  <meta name="theme-color" content="#C9A84C" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Archivo+Black&family=Anton&family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Arm scroll-reveal only when the document is actually visible.
+    // Hidden iframes / prerender contexts: skip animation, render content as-is.
+    (function () {
+      var arm = function () { document.documentElement.classList.add('reveal-armed'); };
+      if (document.visibilityState === 'visible') {
+        arm();
+      } else {
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') arm();
+        }, { once: true });
+      }
+    })();
+  </script>
+</head>
+<body class="dark">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+
+  <script>
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      var s = document.createElement('script'); s.src = 'tweaks-panel.js'; document.body.appendChild(s);
+    }
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
