@@ -1,56 +1,66 @@
 // admin.jsx — Moto Fácil · Painel administrativo
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useCallback } = React;
 
-const CATEGORIAS = ["urbana", "trail", "esportiva", "scooter", "elétrica", "custom", "outra"];
-const MARCAS     = ["Honda", "Yamaha", "Suzuki", "Kawasaki", "BMW", "Ducati", "Triumph", "Outra"];
+const SB_URL = "https://hxafbnhqvzgjyxhkpxxb.supabase.co";
+const SB_KEY = "sb_publishable_wmBhcq00_rhSujycjPoGfw_shkalHY5";
+const sb     = supabase.createClient(SB_URL, SB_KEY);
 
-// ── API helper ────────────────────────────────────────────────────────────────
-const api = {
-  get: (url, tok) =>
-    fetch(url, tok ? { headers: { "X-Session": tok } } : {}).then(r => r.json()),
+const CATEGORIAS = ["urbana","trail","esportiva","scooter","elétrica","custom","outra"];
+const MARCAS     = ["Honda","Yamaha","Suzuki","Kawasaki","BMW","Ducati","Triumph","Outra"];
+const fmt        = (n) => n ? `R$ ${Number(n).toLocaleString("pt-BR")}` : "—";
 
-  post: (url, data, tok) =>
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(tok ? { "X-Session": tok } : {}) },
-      body: JSON.stringify(data),
-    }).then(r => r.json()),
+// ── Utilitários ───────────────────────────────────────────────────────────────
+async function toWebP(file, maxW = 1200, quality = 0.82) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const ratio = Math.min(1, maxW / img.naturalWidth);
+      const w = Math.round(img.naturalWidth * ratio);
+      const h = Math.round(img.naturalHeight * ratio);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => resolve(b), "image/webp", quality);
+    };
+    img.src = url;
+  });
+}
 
-  put: (url, data, tok) =>
-    fetch(url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "X-Session": tok },
-      body: JSON.stringify(data),
-    }).then(r => r.json()),
+async function uploadFoto(file, motoId, idx) {
+  const blob = await toWebP(file);
+  const name = `${motoId}-${idx}-${Date.now()}.webp`;
+  const { error } = await sb.storage.from("fotos-motos").upload(name, blob, {
+    contentType: "image/webp", upsert: true,
+  });
+  if (error) throw error;
+  return sb.storage.from("fotos-motos").getPublicUrl(name).data.publicUrl;
+}
 
-  del: (url, tok) =>
-    fetch(url, { method: "DELETE", headers: { "X-Session": tok } }).then(r => r.json()),
+async function logAudit(action, entity, entityId, details) {
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from("audit_log").insert({
+    action, entity, entity_id: String(entityId),
+    user_email: user?.email || "unknown",
+    details: details || {},
+  });
+}
 
-  upload: (file, tok) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    return fetch("/api/upload", {
-      method: "POST",
-      headers: { "X-Session": tok },
-      body: fd,
-    }).then(r => r.json());
-  },
-};
-
-// ── Tela de login ─────────────────────────────────────────────────────────────
+// ── Login ─────────────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
-  const [user, setUser]       = useState("admin");
-  const [pw,   setPw]         = useState("");
-  const [err,  setErr]        = useState("");
-  const [busy, setBusy]       = useState(false);
+  const [email, setEmail]   = useState("");
+  const [pw,    setPw]      = useState("");
+  const [err,   setErr]     = useState("");
+  const [busy,  setBusy]    = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true); setErr("");
-    const res = await api.post("/api/login", { username: user, password: pw });
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
     setBusy(false);
-    if (res.token) onLogin(res.token);
-    else setErr(res.error || "Usuário ou senha incorretos.");
+    if (error) setErr("E-mail ou senha incorretos.");
+    else onLogin();
   };
 
   return (
@@ -58,17 +68,19 @@ function Login({ onLogin }) {
       <div className="login__box">
         <div className="login__logo">MOTO<span>FÁCIL</span></div>
         <p className="login__sub">Painel administrativo</p>
-        <form onSubmit={submit} className="login__form">
-          <div className="f-field">
-            <label>Usuário</label>
-            <input value={user} onChange={e => setUser(e.target.value)} autoFocus required />
+        <form className="login__form" onSubmit={submit}>
+          <div className="login__field">
+            <label>E-mail</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="seu@email.com" required autoFocus />
           </div>
-          <div className="f-field">
+          <div className="login__field">
             <label>Senha</label>
-            <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••" required />
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)}
+              placeholder="••••••••" required />
           </div>
-          {err && <p className="f-err">{err}</p>}
-          <button className="a-btn a-btn--primary" disabled={busy}>
+          {err && <p className="login__err">{err}</p>}
+          <button className="login__btn" type="submit" disabled={busy}>
             {busy ? "Entrando..." : "Entrar"}
           </button>
         </form>
@@ -77,236 +89,219 @@ function Login({ onLogin }) {
   );
 }
 
-// ── Upload de fotos ───────────────────────────────────────────────────────────
-function PhotoUploader({ fotos, onChange, token }) {
-  const fileRef  = useRef();
-  const [busy, setBusy] = useState(false);
-
-  const upload = async (e) => {
-    const files = [...e.target.files].slice(0, 4 - fotos.length);
-    setBusy(true);
-    for (const f of files) {
-      const res = await api.upload(f, token);
-      if (res.url) onChange(prev => [...prev, res.url].slice(0, 4));
-    }
-    setBusy(false);
-    e.target.value = "";
-  };
-
-  const remove = (i) => onChange(prev => prev.filter((_, j) => j !== i));
-
-  return (
-    <div className="photos">
-      <label className="f-label">Fotos (até 4)</label>
-      <div className="photos__grid">
-        {fotos.map((url, i) => (
-          <div className="photos__thumb" key={i}>
-            <img src={url} alt={`Foto ${i + 1}`} />
-            <button type="button" className="photos__rm" onClick={() => remove(i)}>✕</button>
-          </div>
-        ))}
-        {fotos.length < 4 && (
-          <button
-            type="button"
-            className="photos__add"
-            onClick={() => fileRef.current.click()}
-            disabled={busy}
-          >
-            <span className="photos__add-icon">{busy ? "…" : "+"}</span>
-            <span className="photos__add-label">Foto {fotos.length + 1}/4</span>
-          </button>
-        )}
-      </div>
-      <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={upload} />
-    </div>
-  );
-}
-
-// ── Modal: formulário de moto ─────────────────────────────────────────────────
-function MotoForm({ moto, tipo, token, onSave, onCancel }) {
-  const isNew = !moto;
-  const isVenda = tipo === "venda";
-
+// ── Formulário de moto (adicionar / editar) ────────────────────────────────────
+function MotoForm({ moto: initial, onSave, onCancel }) {
+  const isEdit = !!initial?.id;
   const blank = {
-    tipo, marca: "", modelo: "", ano: new Date().getFullYear(),
-    cor: "", categoria: "urbana", km: "", fotos: [],
-    disponivel: true, destaque: false, observacoes: "",
-    preco: "", entrada: "", parcela: "",
-    preco_diaria: "", preco_mensal: "",
+    tipo:"venda", marca:"Honda", modelo:"", ano: new Date().getFullYear(),
+    km:0, preco:"", entrada:"", parcela:"",
+    preco_diaria:"", preco_semanal:"", preco_mensal:"",
+    cor:"", categoria:"urbana", fotos:[], disponivel:true,
+    destaque:false, observacoes:"",
   };
-
-  const [form, setForm] = useState(moto || blank);
-  const [busy, setBusy] = useState(false);
-  const [err,  setErr]  = useState("");
+  const [form,       setForm]       = useState(initial || blank);
+  const [uploading,  setUploading]  = useState(false);
+  const [uploadProg, setUploadProg] = useState("");
+  const [busy,       setBusy]       = useState(false);
+  const [err,        setErr]        = useState("");
+  const fileRef = useRef();
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const save = async (e) => {
-    e.preventDefault();
-    if (!form.marca.trim() || !form.modelo.trim()) {
-      setErr("Marca e modelo são obrigatórios.");
-      return;
+  const handleFiles = async (files) => {
+    const arr = Array.from(files);
+    if (!arr.length) return;
+    if ((form.fotos.length + arr.length) > 4) { setErr("Máximo 4 fotos por moto."); return; }
+    setUploading(true); setErr("");
+    try {
+      const id = isEdit ? form.id : `tmp-${Date.now()}`;
+      const urls = [];
+      for (let i = 0; i < arr.length; i++) {
+        setUploadProg(`Convertendo e enviando ${i + 1}/${arr.length}...`);
+        const url = await uploadFoto(arr[i], id, form.fotos.length + i);
+        urls.push(url);
+      }
+      setForm(f => ({ ...f, fotos: [...f.fotos, ...urls] }));
+    } catch (e) {
+      setErr("Erro no upload: " + e.message);
     }
+    setUploading(false); setUploadProg("");
+  };
+
+  const removePhoto = (idx) => setForm(f => ({ ...f, fotos: f.fotos.filter((_, i) => i !== idx) }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.modelo.trim()) { setErr("Modelo é obrigatório."); return; }
     setBusy(true); setErr("");
-    const res = isNew
-      ? await api.post("/api/motos", { ...form, tipo }, token)
-      : await api.put(`/api/motos/${form.id}`, form, token);
+    const payload = {
+      tipo: form.tipo, marca: form.marca, modelo: form.modelo.trim(),
+      ano: Number(form.ano) || null, km: Number(form.km) || 0,
+      preco: form.tipo === "venda"    ? (Number(form.preco)    || null) : null,
+      entrada: form.tipo === "venda"  ? (Number(form.entrada)  || null) : null,
+      parcela: form.tipo === "venda"  ? (Number(form.parcela)  || null) : null,
+      preco_diaria:  form.tipo === "aluguel" ? (Number(form.preco_diaria)  || null) : null,
+      preco_semanal: form.tipo === "aluguel" ? (Number(form.preco_semanal) || null) : null,
+      preco_mensal:  form.tipo === "aluguel" ? (Number(form.preco_mensal)  || null) : null,
+      cor: form.cor.trim(), categoria: form.categoria,
+      fotos: form.fotos, disponivel: form.disponivel,
+      destaque: form.destaque, observacoes: form.observacoes.trim(),
+    };
+    let result, error;
+    if (isEdit) {
+      ({ data: result, error } = await sb.from("motos").update({ ...payload, updated_by: (await sb.auth.getUser()).data.user?.email }).eq("id", form.id).select().single());
+      if (!error) await logAudit("update_moto", "moto", form.id, { modelo: form.modelo });
+    } else {
+      ({ data: result, error } = await sb.from("motos").insert(payload).select().single());
+      if (!error) await logAudit("create_moto", "moto", result.id, { modelo: form.modelo });
+    }
     setBusy(false);
-    if (res.error) { setErr(res.error); return; }
-    onSave(res);
+    if (error) { setErr(error.message); return; }
+    onSave(result);
   };
 
   return (
-    <div className="a-overlay">
-      <div className="a-modal">
-        <div className="a-modal__head">
-          <h2>{isNew ? "Nova moto" : "Editar moto"} · {tipo}</h2>
-          <button type="button" className="a-modal__close" onClick={onCancel}>✕</button>
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal__head">
+          <h2>{isEdit ? "Editar moto" : "Adicionar moto"}</h2>
+          <button className="modal__close" onClick={onCancel}>✕</button>
         </div>
 
-        <form onSubmit={save} className="a-modal__body">
-          <PhotoUploader
-            fotos={form.fotos || []}
-            onChange={v => set("fotos", typeof v === "function" ? v(form.fotos || []) : v)}
-            token={token}
-          />
-
-          <div className="f-row">
-            <div className="f-field">
-              <label>Marca *</label>
-              <input
-                list="marcas-dl" value={form.marca}
-                onChange={e => set("marca", e.target.value)}
-                placeholder="Honda" required
-              />
-              <datalist id="marcas-dl">
-                {MARCAS.map(m => <option key={m} value={m} />)}
-              </datalist>
+        <form className="moto-form" onSubmit={submit}>
+          {/* Tipo */}
+          <div className="mf-row">
+            <div className="mf-field">
+              <label>Tipo</label>
+              <select value={form.tipo} onChange={e => set("tipo", e.target.value)}>
+                <option value="venda">Venda</option>
+                <option value="aluguel">Aluguel</option>
+              </select>
             </div>
-            <div className="f-field">
+            <div className="mf-field">
+              <label>Marca</label>
+              <select value={form.marca} onChange={e => set("marca", e.target.value)}>
+                {MARCAS.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+            <div className="mf-field mf-field--wide">
               <label>Modelo *</label>
-              <input
-                value={form.modelo}
-                onChange={e => set("modelo", e.target.value)}
-                placeholder="CG 160 Start" required
-              />
+              <input value={form.modelo} onChange={e => set("modelo", e.target.value)}
+                placeholder="Ex: Biz 110i" required />
             </div>
           </div>
 
-          <div className="f-row">
-            <div className="f-field">
+          {/* Básico */}
+          <div className="mf-row">
+            <div className="mf-field">
               <label>Ano</label>
-              <input
-                type="number" value={form.ano}
-                onChange={e => set("ano", Number(e.target.value))}
-                min={1990} max={2030}
-              />
+              <input type="number" value={form.ano} onChange={e => set("ano", e.target.value)} min="1990" max="2030" />
             </div>
-            <div className="f-field">
+            <div className="mf-field">
+              <label>KM</label>
+              <input type="number" value={form.km} onChange={e => set("km", e.target.value)} min="0" />
+            </div>
+            <div className="mf-field">
               <label>Cor</label>
-              <input
-                value={form.cor}
-                onChange={e => set("cor", e.target.value)}
-                placeholder="Vermelho"
-              />
+              <input value={form.cor} onChange={e => set("cor", e.target.value)} placeholder="Ex: Vermelha" />
             </div>
-            <div className="f-field">
+            <div className="mf-field">
               <label>Categoria</label>
               <select value={form.categoria} onChange={e => set("categoria", e.target.value)}>
-                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                {CATEGORIAS.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
           </div>
 
-          {isVenda && (
-            <>
-              <div className="f-row">
-                <div className="f-field">
-                  <label>Quilometragem</label>
-                  <input
-                    type="number" value={form.km}
-                    onChange={e => set("km", e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="15000" min={0}
-                  />
-                </div>
-                <div className="f-field">
-                  <label>Preço (R$)</label>
-                  <input
-                    type="number" value={form.preco}
-                    onChange={e => set("preco", e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="10500" min={0}
-                  />
-                </div>
+          {/* Preços venda */}
+          {form.tipo === "venda" && (
+            <div className="mf-row">
+              <div className="mf-field">
+                <label>Preço (R$)</label>
+                <input type="number" value={form.preco} onChange={e => set("preco", e.target.value)} min="0" placeholder="12990" />
               </div>
-              <div className="f-row">
-                <div className="f-field">
-                  <label>Entrada (R$)</label>
-                  <input
-                    type="number" value={form.entrada}
-                    onChange={e => set("entrada", e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="2500" min={0}
-                  />
-                </div>
-                <div className="f-field">
-                  <label>Parcela/mês (R$)</label>
-                  <input
-                    type="number" value={form.parcela}
-                    onChange={e => set("parcela", e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="380" min={0}
-                  />
-                </div>
+              <div className="mf-field">
+                <label>Entrada (R$)</label>
+                <input type="number" value={form.entrada} onChange={e => set("entrada", e.target.value)} min="0" placeholder="2000" />
               </div>
-            </>
-          )}
-
-          {!isVenda && (
-            <div className="f-row">
-              <div className="f-field">
-                <label>Valor mensal (R$)</label>
-                <input
-                  type="number" value={form.preco_mensal}
-                  onChange={e => set("preco_mensal", e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="900" min={0}
-                />
-              </div>
-              <div className="f-field">
-                <label>Valor diária (R$)</label>
-                <input
-                  type="number" value={form.preco_diaria}
-                  onChange={e => set("preco_diaria", e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="60" min={0}
-                />
+              <div className="mf-field">
+                <label>Parcela/mês (R$)</label>
+                <input type="number" value={form.parcela} onChange={e => set("parcela", e.target.value)} min="0" placeholder="350" />
               </div>
             </div>
           )}
 
-          <div className="f-field">
-            <label>Observações</label>
-            <textarea
-              value={form.observacoes || ""}
-              onChange={e => set("observacoes", e.target.value)}
-              rows={2}
-              placeholder="IPVA pago, revisão em dia, manutenção inclusa…"
-            />
+          {/* Preços aluguel */}
+          {form.tipo === "aluguel" && (
+            <div className="mf-row">
+              <div className="mf-field">
+                <label>Diária (R$)</label>
+                <input type="number" value={form.preco_diaria} onChange={e => set("preco_diaria", e.target.value)} min="0" placeholder="45" />
+              </div>
+              <div className="mf-field">
+                <label>Semanal (R$)</label>
+                <input type="number" value={form.preco_semanal} onChange={e => set("preco_semanal", e.target.value)} min="0" placeholder="270" />
+              </div>
+              <div className="mf-field">
+                <label>Mensal (R$)</label>
+                <input type="number" value={form.preco_mensal} onChange={e => set("preco_mensal", e.target.value)} min="0" placeholder="900" />
+              </div>
+            </div>
+          )}
+
+          {/* Observações */}
+          <div className="mf-row">
+            <div className="mf-field mf-field--wide">
+              <label>Observações</label>
+              <input value={form.observacoes} onChange={e => set("observacoes", e.target.value)}
+                placeholder="Ex: 0 km · IPVA 2025 pago" maxLength={120} />
+            </div>
           </div>
 
-          <div className="f-checks">
-            <label className="f-check">
-              <input type="checkbox" checked={!!form.disponivel} onChange={e => set("disponivel", e.target.checked)} />
-              Disponível (aparece no catálogo público)
+          {/* Flags */}
+          <div className="mf-flags">
+            <label className="mf-check">
+              <input type="checkbox" checked={form.disponivel} onChange={e => set("disponivel", e.target.checked)} />
+              Disponível (visível no catálogo)
             </label>
-            <label className="f-check">
-              <input type="checkbox" checked={!!form.destaque} onChange={e => set("destaque", e.target.checked)} />
-              Destaque (badge no card)
+            <label className="mf-check">
+              <input type="checkbox" checked={form.destaque} onChange={e => set("destaque", e.target.checked)} />
+              Destaque
             </label>
           </div>
 
-          {err && <p className="f-err">{err}</p>}
+          {/* Fotos */}
+          <div className="mf-photos">
+            <div className="mf-photos__head">
+              <label>Fotos ({form.fotos.length}/4)</label>
+              {form.fotos.length < 4 && (
+                <button type="button" className="btn-secondary btn-sm" onClick={() => fileRef.current.click()} disabled={uploading}>
+                  {uploading ? uploadProg : "+ Adicionar fotos"}
+                </button>
+              )}
+              <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:"none" }}
+                onChange={e => handleFiles(e.target.files)} />
+            </div>
+            <p className="mf-photos__hint">PNG, JPG ou HEIC · convertido automaticamente para WebP · máx. 4 fotos</p>
+            {form.fotos.length > 0 && (
+              <div className="mf-photos__grid">
+                {form.fotos.map((url, i) => (
+                  <div key={i} className="mf-photo">
+                    <img src={url} alt={`Foto ${i + 1}`} />
+                    <button type="button" className="mf-photo__del" onClick={() => removePhoto(i)} title="Remover">✕</button>
+                    {i === 0 && <span className="mf-photo__main">Principal</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <div className="a-modal__foot">
-            <button type="button" className="a-btn a-btn--ghost" onClick={onCancel}>Cancelar</button>
-            <button type="submit" className="a-btn a-btn--primary" disabled={busy}>
-              {busy ? "Salvando…" : isNew ? "Adicionar moto" : "Salvar alterações"}
+          {err && <p className="mf-err">{err}</p>}
+
+          <div className="mf-actions">
+            <button type="button" className="btn-secondary" onClick={onCancel}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={busy || uploading}>
+              {busy ? "Salvando..." : isEdit ? "Salvar alterações" : "Adicionar moto"}
             </button>
           </div>
         </form>
@@ -315,290 +310,327 @@ function MotoForm({ moto, tipo, token, onSave, onCancel }) {
   );
 }
 
-// ── Modal: configuração de campos ──────────────────────────────────────────────
-function ConfigPanel({ config, token, onClose }) {
-  const [cfg,  setCfg]  = useState(JSON.parse(JSON.stringify(config)));
-  const [busy, setBusy] = useState(false);
-  const [ok,   setOk]   = useState(false);
-
-  const toggle = (tipo, field) =>
-    setCfg(c => ({ ...c, [tipo]: { ...c[tipo], [field]: !c[tipo]?.[field] } }));
-
-  const save = async () => {
-    setBusy(true);
-    await api.post("/api/config", cfg, token);
-    setBusy(false); setOk(true);
-    setTimeout(() => setOk(false), 2500);
-  };
-
-  const LABELS = {
-    venda: {
-      preco:      "Preço total",
-      entrada:    "Entrada",
-      parcela:    "Parcela/mês",
-      km:         "Quilometragem",
-      ano:        "Ano",
-      cor:        "Cor",
-      categoria:  "Categoria",
-    },
-    aluguel: {
-      preco_mensal: "Valor mensal",
-      preco_diaria: "Valor diária",
-      km:           "Quilometragem",
-      ano:          "Ano",
-      cor:          "Cor",
-      categoria:    "Categoria",
-    },
-  };
+// ── Lista de motos ────────────────────────────────────────────────────────────
+function MotosList({ motos, loading, onEdit, onToggle, onDelete }) {
+  if (loading) return <div className="adm-empty">Carregando...</div>;
+  if (!motos.length) return (
+    <div className="adm-empty">
+      <p>Nenhuma moto cadastrada.</p>
+      <p>Clique em <strong>+ Nova moto</strong> para começar.</p>
+    </div>
+  );
 
   return (
-    <div className="a-overlay">
-      <div className="a-modal a-modal--sm">
-        <div className="a-modal__head">
-          <h2>Campos visíveis nos cards</h2>
-          <button type="button" className="a-modal__close" onClick={onClose}>✕</button>
-        </div>
-        <div className="a-modal__body">
-          {["venda", "aluguel"].map(tipo => (
-            <div key={tipo} className="cfg-section">
-              <h3 className="cfg-h3">Motos {tipo === "venda" ? "à Venda" : "para Aluguel"}</h3>
-              {Object.entries(LABELS[tipo]).map(([k, label]) => (
-                <label key={k} className="f-check cfg-check">
-                  <input
-                    type="checkbox"
-                    checked={cfg[tipo]?.[k] ?? true}
-                    onChange={() => toggle(tipo, k)}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
+    <div className="motos-table-wrap">
+      <table className="motos-table">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Moto</th>
+            <th>Tipo</th>
+            <th>Preço</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {motos.map(m => (
+            <tr key={m.id} className={!m.disponivel ? "row--off" : ""}>
+              <td>
+                <div className="tbl-thumb">
+                  {m.fotos?.[0]
+                    ? <img src={m.fotos[0]} alt="" />
+                    : <span className="tbl-nophoto">📷</span>
+                  }
+                  {m.fotos?.length > 1 && <span className="tbl-count">+{m.fotos.length - 1}</span>}
+                </div>
+              </td>
+              <td>
+                <strong className="tbl-name">{m.marca} {m.modelo}</strong>
+                <span className="tbl-meta">{m.ano}{m.cor ? ` · ${m.cor}` : ""}{m.km != null && m.tipo === "venda" ? ` · ${m.km.toLocaleString("pt-BR")} km` : ""}</span>
+              </td>
+              <td><span className={`badge badge--${m.tipo}`}>{m.tipo === "venda" ? "Venda" : "Aluguel"}</span></td>
+              <td className="tbl-price">
+                {m.tipo === "venda"
+                  ? <>{fmt(m.preco)}{m.entrada ? <small>Entrada: {fmt(m.entrada)}</small> : null}</>
+                  : <>{m.preco_mensal ? <>{fmt(m.preco_mensal)}<small>/mês</small></> : null}{m.preco_diaria ? <small>{fmt(m.preco_diaria)}/dia</small> : null}</>
+                }
+              </td>
+              <td>
+                <div className="tbl-status">
+                  <button
+                    className={`toggle ${m.disponivel ? "toggle--on" : "toggle--off"}`}
+                    onClick={() => onToggle(m)}
+                    title={m.disponivel ? "Clique para despublicar" : "Clique para publicar"}
+                  >
+                    {m.disponivel ? "Publicado" : "Oculto"}
+                  </button>
+                  {m.destaque && <span className="badge badge--dest">★ Destaque</span>}
+                </div>
+              </td>
+              <td>
+                <div className="tbl-actions">
+                  <button className="btn-icon" onClick={() => onEdit(m)} title="Editar">✏️</button>
+                  <button className="btn-icon btn-icon--del" onClick={() => onDelete(m)} title="Excluir">🗑️</button>
+                </div>
+              </td>
+            </tr>
           ))}
-        </div>
-        <div className="a-modal__foot">
-          <button type="button" className="a-btn a-btn--ghost" onClick={onClose}>Fechar</button>
-          <button type="button" className="a-btn a-btn--primary" onClick={save} disabled={busy}>
-            {busy ? "Salvando…" : ok ? "✓ Salvo!" : "Salvar configuração"}
-          </button>
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 }
 
-// ── Lista de motos (por tipo) ──────────────────────────────────────────────────
-function MotoList({ tipo, token, config }) {
-  const [motos,    setMotos]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [form,     setForm]     = useState(null); // null=fechado false=novo {obj}=editar
-  const [showCfg,  setShowCfg]  = useState(false);
+// ── Painel de Configuração de Preços ──────────────────────────────────────────
+function ConfigPanel({ onMsg }) {
+  const [cfg,  setCfg]  = useState(null);
+  const [busy, setBusy] = useState(false);
 
-  const isVenda = tipo === "venda";
-  const fmt = (n) => n ? `R$ ${Number(n).toLocaleString("pt-BR")}` : "–";
+  useEffect(() => {
+    sb.from("config").select("*").eq("id", "global").single()
+      .then(({ data }) => data && setCfg(data));
+  }, []);
 
-  const load = () => {
-    setLoading(true);
-    api.get(`/api/motos?tipo=${tipo}`, token)
-      .then(m => { setMotos(Array.isArray(m) ? m : []); setLoading(false); });
+  const set = (k, v) => setCfg(c => ({ ...c, [k]: v }));
+
+  const save = async () => {
+    setBusy(true);
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from("config").update({ ...cfg, updated_by: user?.email }).eq("id", "global");
+    setBusy(false);
+    if (!error) {
+      await logAudit("update_config", "config", "global", cfg);
+      onMsg("Configuração salva com sucesso.");
+    }
   };
 
-  useEffect(load, [tipo]);
-
-  const del = async (id, nome) => {
-    if (!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`)) return;
-    await api.del(`/api/motos/${id}`, token);
-    load();
-  };
-
-  const toggleDisp = async (moto) => {
-    await api.put(`/api/motos/${moto.id}`, { ...moto, disponivel: !moto.disponivel }, token);
-    load();
-  };
+  if (!cfg) return <div className="adm-empty">Carregando configuração...</div>;
 
   return (
-    <div className="adm-list">
-      <div className="adm-list__top">
-        <div>
-          <h2 className="adm-list__title">
-            {isVenda ? "Motos à Venda" : "Motos para Aluguel"}
-          </h2>
-          <p className="adm-list__count">
-            {motos.length} moto{motos.length !== 1 ? "s" : ""} cadastrada{motos.length !== 1 ? "s" : ""}
-          </p>
+    <div className="cfg-panel">
+      <p className="cfg-desc">Define globalmente quais informações são exibidas no catálogo público. Aplicado a todas as motos automaticamente.</p>
+
+      <div className="cfg-cols">
+        <div className="cfg-group">
+          <h3 className="cfg-group__title">🏍️ Motos à Venda</h3>
+          {[
+            ["venda_preco",     "Valor de venda (R$)"],
+            ["venda_entrada",   "Valor de entrada"],
+            ["venda_parcela",   "Valor da parcela/mês"],
+            ["venda_simulacao", "Botão: Simular Promissória"],
+          ].map(([key, label]) => (
+            <label key={key} className="cfg-check">
+              <input type="checkbox" checked={!!cfg[key]} onChange={e => set(key, e.target.checked)} />
+              {label}
+            </label>
+          ))}
         </div>
-        <div className="adm-list__acts">
-          <button className="a-btn a-btn--ghost" onClick={() => setShowCfg(true)}>⚙ Campos</button>
-          <button className="a-btn a-btn--primary" onClick={() => setForm(false)}>+ Nova moto</button>
+
+        <div className="cfg-group">
+          <h3 className="cfg-group__title">📋 Motos para Aluguel</h3>
+          {[
+            ["aluguel_diaria",  "Valor da diária"],
+            ["aluguel_semanal", "Valor semanal"],
+            ["aluguel_mensal",  "Valor mensal"],
+          ].map(([key, label]) => (
+            <label key={key} className="cfg-check">
+              <input type="checkbox" checked={!!cfg[key]} onChange={e => set(key, e.target.checked)} />
+              {label}
+            </label>
+          ))}
         </div>
       </div>
 
-      {loading && <div className="adm-loading">Carregando…</div>}
+      <div className="cfg-rules">
+        <p>⚠️ Desmarcar todas as opções de preço oculta os preços do catálogo público.</p>
+        <p>✅ Alterações entram em vigor imediatamente no site.</p>
+      </div>
 
-      {!loading && motos.length === 0 && (
-        <div className="adm-empty">
-          <p>Nenhuma moto cadastrada ainda.</p>
-          <button className="a-btn a-btn--primary" onClick={() => setForm(false)}>
-            Cadastrar primeira moto
-          </button>
+      <button className="btn-primary" onClick={save} disabled={busy}>
+        {busy ? "Salvando..." : "Salvar configuração"}
+      </button>
+    </div>
+  );
+}
+
+// ── Log de Auditoria ──────────────────────────────────────────────────────────
+function AuditLog() {
+  const [logs,    setLogs]    = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    sb.from("audit_log").select("*").order("created_at", { ascending: false }).limit(100)
+      .then(({ data }) => { setLogs(data || []); setLoading(false); });
+  }, []);
+
+  const actionLabel = (a) => ({
+    create_moto:   "Adicionou moto",
+    update_moto:   "Editou moto",
+    delete_moto:   "Excluiu moto",
+    toggle_moto:   "Alterou status",
+    update_config: "Alterou config",
+  }[a] || a);
+
+  if (loading) return <div className="adm-empty">Carregando log...</div>;
+  if (!logs.length) return <div className="adm-empty">Nenhuma ação registrada ainda.</div>;
+
+  return (
+    <div className="audit-wrap">
+      <table className="audit-table">
+        <thead>
+          <tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr>
+        </thead>
+        <tbody>
+          {logs.map(l => (
+            <tr key={l.id}>
+              <td className="audit-date">{new Date(l.created_at).toLocaleString("pt-BR")}</td>
+              <td className="audit-user">{l.user_email}</td>
+              <td><span className="audit-action">{actionLabel(l.action)}</span></td>
+              <td className="audit-detail">{l.details?.modelo || l.entity_id || "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Admin App principal ───────────────────────────────────────────────────────
+function AdminApp() {
+  const [user,    setUser]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [tab,     setTab]     = useState("motos");
+  const [motos,   setMotos]   = useState([]);
+  const [mLoading,setMLoading]= useState(true);
+  const [form,    setForm]    = useState(null); // null | "new" | moto object
+  const [msg,     setMsg]     = useState("");
+  const [confirm, setConfirm] = useState(null);
+
+  // Auth state
+  useEffect(() => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      setLoading(false);
+    });
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load motos
+  const loadMotos = useCallback(async () => {
+    setMLoading(true);
+    const { data } = await sb.from("motos").select("*").order("created_at", { ascending: false });
+    setMotos(data || []);
+    setMLoading(false);
+  }, []);
+
+  useEffect(() => { if (user) loadMotos(); }, [user]);
+
+  const showMsg = (m) => { setMsg(m); setTimeout(() => setMsg(""), 3500); };
+
+  const handleLogout = async () => {
+    await sb.auth.signOut();
+  };
+
+  const handleSave = (result) => {
+    loadMotos();
+    setForm(null);
+    showMsg(form?.id ? "Moto atualizada." : "Moto adicionada.");
+  };
+
+  const handleToggle = async (moto) => {
+    const novoStatus = !moto.disponivel;
+    const { data: { user: u } } = await sb.auth.getUser();
+    await sb.from("motos").update({ disponivel: novoStatus, updated_by: u?.email }).eq("id", moto.id);
+    await logAudit("toggle_moto", "moto", moto.id, { disponivel: novoStatus, modelo: moto.modelo });
+    setMotos(ms => ms.map(m => m.id === moto.id ? { ...m, disponivel: novoStatus } : m));
+    showMsg(`${moto.modelo} ${novoStatus ? "publicado" : "ocultado"}.`);
+  };
+
+  const handleDelete = (moto) => {
+    setConfirm({
+      msg: `Excluir "${moto.marca} ${moto.modelo}"? Esta ação não pode ser desfeita.`,
+      onOk: async () => {
+        await sb.from("motos").delete().eq("id", moto.id);
+        await logAudit("delete_moto", "moto", moto.id, { modelo: moto.modelo });
+        setMotos(ms => ms.filter(m => m.id !== moto.id));
+        setConfirm(null);
+        showMsg("Moto excluída.");
+      },
+    });
+  };
+
+  if (loading) return <div className="adm-splash">Carregando...</div>;
+  if (!user)   return <Login onLogin={() => {}} />;
+
+  const counts = {
+    venda:   motos.filter(m => m.tipo === "venda"   && m.disponivel).length,
+    aluguel: motos.filter(m => m.tipo === "aluguel" && m.disponivel).length,
+    ocultas: motos.filter(m => !m.disponivel).length,
+  };
+
+  return (
+    <div className="adm">
+      {/* Header */}
+      <header className="adm-header">
+        <div className="adm-header__brand">MOTO<span>FÁCIL</span></div>
+        <div className="adm-header__right">
+          <span className="adm-header__user">{user.email}</span>
+          <button className="btn-logout" onClick={handleLogout}>Sair</button>
         </div>
-      )}
+      </header>
 
-      {!loading && motos.length > 0 && (
-        <div className="adm-table-wrap">
-          <table className="adm-table">
-            <thead>
-              <tr>
-                <th>Foto</th>
-                <th>Moto</th>
-                <th>Ano · Cor{isVenda ? " · KM" : ""}</th>
-                {isVenda
-                  ? <><th>Preço</th><th>Entrada · Parcela</th></>
-                  : <><th>Mensal</th><th>Diária</th></>
-                }
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {motos.map(m => (
-                <tr key={m.id} className={m.disponivel ? "" : "adm-tr--off"}>
-                  <td>
-                    {m.fotos?.[0]
-                      ? <img src={m.fotos[0]} className="adm-thumb" alt="" />
-                      : <div className="adm-thumb adm-thumb--empty">sem foto</div>
-                    }
-                  </td>
-                  <td>
-                    <strong>{m.marca} {m.modelo}</strong>
-                    {m.categoria && <div className="adm-tag">{m.categoria}</div>}
-                    {m.destaque  && <div className="adm-tag adm-tag--gold">★ Destaque</div>}
-                  </td>
-                  <td className="adm-muted">
-                    {[
-                      m.ano,
-                      m.cor,
-                      isVenda && m.km != null ? `${Number(m.km).toLocaleString("pt-BR")} km` : null
-                    ].filter(Boolean).join(" · ")}
-                  </td>
-                  {isVenda ? (
-                    <>
-                      <td>{fmt(m.preco)}</td>
-                      <td className="adm-muted">{fmt(m.entrada)} · {fmt(m.parcela)}/mês</td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{fmt(m.preco_mensal)}/mês</td>
-                      <td className="adm-muted">{fmt(m.preco_diaria)}/dia</td>
-                    </>
-                  )}
-                  <td>
-                    <button
-                      className={`adm-status${m.disponivel ? " adm-status--on" : ""}`}
-                      onClick={() => toggleDisp(m)}
-                      title={m.disponivel ? "Ocultar do catálogo" : "Tornar disponível"}
-                    >
-                      {m.disponivel ? "Disponível" : "Oculto"}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="adm-acts">
-                      <button
-                        className="adm-act" title="Editar"
-                        onClick={() => setForm(m)}
-                      >✏</button>
-                      <button
-                        className="adm-act adm-act--del" title="Excluir"
-                        onClick={() => del(m.id, `${m.marca} ${m.modelo}`)}
-                      >✕</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Stats */}
+      <div className="adm-stats">
+        <div className="stat"><span className="stat__n">{counts.venda}</span><span className="stat__l">À venda</span></div>
+        <div className="stat"><span className="stat__n">{counts.aluguel}</span><span className="stat__l">Aluguel</span></div>
+        <div className="stat stat--off"><span className="stat__n">{counts.ocultas}</span><span className="stat__l">Ocultas</span></div>
+      </div>
 
-      {form !== null && (
+      {/* Tabs */}
+      <div className="adm-tabs">
+        {[["motos","🏍️ Motos"],["config","⚙️ Configuração"],["log","📋 Log"]].map(([k, l]) => (
+          <button key={k} className={`adm-tab${tab === k ? " adm-tab--on" : ""}`} onClick={() => setTab(k)}>{l}</button>
+        ))}
+        {tab === "motos" && (
+          <button className="btn-primary adm-tab-cta" onClick={() => setForm({ tipo:"venda" })}>+ Nova moto</button>
+        )}
+      </div>
+
+      {/* Conteúdo */}
+      <div className="adm-body">
+        {tab === "motos"  && <MotosList motos={motos} loading={mLoading} onEdit={setForm} onToggle={handleToggle} onDelete={handleDelete} />}
+        {tab === "config" && <ConfigPanel onMsg={showMsg} />}
+        {tab === "log"    && <AuditLog />}
+      </div>
+
+      {/* Modal form */}
+      {form && (
         <MotoForm
-          moto={form || null}
-          tipo={tipo}
-          token={token}
-          onSave={() => { setForm(null); load(); }}
+          moto={form?.id ? form : null}
+          onSave={handleSave}
           onCancel={() => setForm(null)}
         />
       )}
 
-      {showCfg && (
-        <ConfigPanel config={config} token={token} onClose={() => setShowCfg(false)} />
-      )}
-    </div>
-  );
-}
-
-// ── App admin ─────────────────────────────────────────────────────────────────
-function AdminApp() {
-  const [token,  setToken]  = useState(() => sessionStorage.getItem("mf_tok") || null);
-  const [tab,    setTab]    = useState("venda");
-  const [config, setConfig] = useState({});
-
-  useEffect(() => {
-    if (!token) return;
-    // Valida sessão
-    fetch("/api/auth", { headers: { "X-Session": token } })
-      .then(r => r.json())
-      .then(d => { if (!d.authed) logout(); });
-    // Carrega config
-    fetch("/api/config").then(r => r.json()).then(setConfig);
-  }, [token]);
-
-  const login  = (tok) => { setToken(tok); sessionStorage.setItem("mf_tok", tok); };
-  const logout = () => {
-    api.post("/api/logout", {}, token).catch(() => {});
-    setToken(null);
-    sessionStorage.removeItem("mf_tok");
-  };
-
-  if (!token) return <Login onLogin={login} />;
-
-  return (
-    <div className="adm-shell">
-      <aside className="adm-side">
-        <div className="adm-side__logo">MOTO<span>FÁCIL</span></div>
-
-        <nav className="adm-nav">
-          {[
-            { id: "venda",   label: "🏷 Venda"   },
-            { id: "aluguel", label: "🔑 Aluguel" },
-          ].map(({ id, label }) => (
-            <button
-              key={id}
-              className={`adm-nav__item${tab === id ? " adm-nav__item--on" : ""}`}
-              onClick={() => setTab(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="adm-side__links">
-          <a href="/catalogo.html?tipo=venda"   target="_blank" className="adm-side__link">
-            Ver catálogo venda ↗
-          </a>
-          <a href="/catalogo.html?tipo=aluguel" target="_blank" className="adm-side__link">
-            Ver catálogo aluguel ↗
-          </a>
-          <a href="/" target="_blank" className="adm-side__link">
-            Ver site ↗
-          </a>
+      {/* Confirm dialog */}
+      {confirm && (
+        <div className="modal-overlay" onClick={() => setConfirm(null)}>
+          <div className="modal modal--sm" onClick={e => e.stopPropagation()}>
+            <p className="confirm__msg">{confirm.msg}</p>
+            <div className="confirm__actions">
+              <button className="btn-secondary" onClick={() => setConfirm(null)}>Cancelar</button>
+              <button className="btn-danger" onClick={confirm.onOk}>Excluir</button>
+            </div>
+          </div>
         </div>
+      )}
 
-        <button className="adm-logout" onClick={logout}>Sair</button>
-      </aside>
-
-      <main className="adm-content">
-        <MotoList key={tab} tipo={tab} token={token} config={config} />
-      </main>
+      {/* Toast */}
+      {msg && <div className="toast">{msg}</div>}
     </div>
   );
 }

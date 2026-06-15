@@ -1,13 +1,17 @@
 // catalogo.jsx — Moto Fácil · Catálogo público (venda e aluguel)
 const { useState, useEffect, useMemo } = React;
 
+const SB_URL = "https://hxafbnhqvzgjyxhkpxxb.supabase.co";
+const SB_KEY = "sb_publishable_wmBhcq00_rhSujycjPoGfw_shkalHY5";
+const sb     = supabase.createClient(SB_URL, SB_KEY);
+
 const WA_NUM  = "5516991471592";
 const wa = (msg) => `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`;
 
 const TIPO     = new URLSearchParams(window.location.search).get("tipo") || "venda";
 const IS_VENDA = TIPO === "venda";
 
-// ── Fallback quando API não responde ─────────────────────────────────────────
+// ── Fallback seed (exibido enquanto Supabase carrega) ─────────────────────────
 const SEED_VENDA = [
   { id:"s1", tipo:"venda", marca:"Honda",  modelo:"Biz 110i",     ano:2024, km:0,     preco:12990, entrada:2000, parcela:350, cor:"Vermelha", categoria:"urbana",   fotos:[], disponivel:true, destaque:true,  observacoes:"0 km · IPVA 2025 pago" },
   { id:"s2", tipo:"venda", marca:"Honda",  modelo:"CG 160 Start", ano:2023, km:8500,  preco:14500, entrada:2500, parcela:380, cor:"Preta",    categoria:"urbana",   fotos:[], disponivel:true, destaque:false, observacoes:"Revisão em dia" },
@@ -17,17 +21,47 @@ const SEED_VENDA = [
   { id:"s6", tipo:"venda", marca:"Honda",  modelo:"XRE 190 ABS",  ano:2023, km:15000, preco:19800, entrada:3500, parcela:520, cor:"Vermelha", categoria:"trail",    fotos:[], disponivel:true, destaque:false, observacoes:"ABS · Revisão em dia" },
 ];
 const SEED_ALUGUEL = [
-  { id:"a1", tipo:"aluguel", marca:"Honda",  modelo:"Biz 110i",    ano:2024, preco_diaria:45, preco_mensal:900,  cor:"Vermelha", categoria:"urbana", fotos:[], disponivel:true, destaque:true,  observacoes:"Manutenção inclusa · Sem fiador" },
-  { id:"a2", tipo:"aluguel", marca:"Honda",  modelo:"CG 160 Cargo",ano:2023, preco_diaria:55, preco_mensal:1100, cor:"Preta",    categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Ideal para delivery · Manutenção inclusa" },
-  { id:"a3", tipo:"aluguel", marca:"Yamaha", modelo:"Factor 150",  ano:2023, preco_diaria:50, preco_mensal:1000, cor:"Vermelha", categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Manutenção inclusa" },
-  { id:"a4", tipo:"aluguel", marca:"Honda",  modelo:"Pop 110i",    ano:2024, preco_diaria:38, preco_mensal:700,  cor:"Branca",   categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Econômica · Ideal para começar" },
+  { id:"a1", tipo:"aluguel", marca:"Honda",  modelo:"Biz 110i",    ano:2024, preco_diaria:45, preco_semanal:270, preco_mensal:900,  cor:"Vermelha", categoria:"urbana", fotos:[], disponivel:true, destaque:true,  observacoes:"Manutenção inclusa · Sem fiador" },
+  { id:"a2", tipo:"aluguel", marca:"Honda",  modelo:"CG 160 Cargo",ano:2023, preco_diaria:55, preco_semanal:330, preco_mensal:1100, cor:"Preta",    categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Ideal para delivery · Manutenção inclusa" },
+  { id:"a3", tipo:"aluguel", marca:"Yamaha", modelo:"Factor 150",  ano:2023, preco_diaria:50, preco_semanal:300, preco_mensal:1000, cor:"Vermelha", categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Manutenção inclusa" },
+  { id:"a4", tipo:"aluguel", marca:"Honda",  modelo:"Pop 110i",    ano:2024, preco_diaria:38, preco_semanal:220, preco_mensal:700,  cor:"Branca",   categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Econômica · Ideal para começar" },
 ];
 const SEED = IS_VENDA ? SEED_VENDA : SEED_ALUGUEL;
+
+// Config padrão enquanto carrega
+const CFG_DEFAULT = {
+  venda:   { preco: true, entrada: true, parcela: true, simulacao: false, ano: true, cor: true, km: true, categoria: true },
+  aluguel: { preco_diaria: true, preco_semanal: false, preco_mensal: true, ano: true, cor: true, categoria: true },
+};
+
+function transformConfig(row) {
+  if (!row) return CFG_DEFAULT;
+  return {
+    venda: {
+      preco:      row.venda_preco,
+      entrada:    row.venda_entrada,
+      parcela:    row.venda_parcela,
+      simulacao:  row.venda_simulacao,
+      ano:        true,
+      cor:        true,
+      km:         true,
+      categoria:  true,
+    },
+    aluguel: {
+      preco_diaria:  row.aluguel_diaria,
+      preco_semanal: row.aluguel_semanal,
+      preco_mensal:  row.aluguel_mensal,
+      ano:           true,
+      cor:           true,
+      categoria:     true,
+    },
+  };
+}
 
 const fmt   = (n) => n ? `R$ ${Number(n).toLocaleString("pt-BR")}` : "";
 const fmtKm = (n) => n != null ? `${Number(n).toLocaleString("pt-BR")} km` : "";
 
-// ── Carrossel de fotos ───────────────────────────────────────────────────────
+// ── Carrossel de fotos ────────────────────────────────────────────────────────
 function Carousel({ moto, onClose }) {
   const fotos = moto.fotos || [];
   const [idx, setIdx] = useState(0);
@@ -51,14 +85,12 @@ function Carousel({ moto, onClose }) {
     <div className="car-overlay" onClick={onClose}>
       <div className="car-box" onClick={e => e.stopPropagation()}>
         <button className="car-close" onClick={onClose} aria-label="Fechar">✕</button>
-
         <div className="car-stage">
           {fotos[idx]
             ? <img src={fotos[idx]} alt={`${moto.marca} ${moto.modelo} · foto ${idx + 1}`} className="car-img" />
             : <div className="car-no">Sem foto</div>
           }
         </div>
-
         {total > 1 && (
           <>
             <button className="car-nav car-nav--prev" onClick={() => setIdx(i => (i - 1 + total) % total)}>‹</button>
@@ -70,7 +102,6 @@ function Carousel({ moto, onClose }) {
             </div>
           </>
         )}
-
         <div className="car-info">
           <strong>{moto.marca} {moto.modelo}</strong>
           {moto.ano && <span> · {moto.ano}</span>}
@@ -81,7 +112,7 @@ function Carousel({ moto, onClose }) {
   );
 }
 
-// ── Card de moto ─────────────────────────────────────────────────────────────
+// ── Card de moto ──────────────────────────────────────────────────────────────
 function MotoCard({ moto, config, onPhoto }) {
   const cfg   = config[TIPO] || {};
   const fotos = moto.fotos || [];
@@ -115,8 +146,8 @@ function MotoCard({ moto, config, onPhoto }) {
         <h3 className="mc__name">{moto.marca} <span>{moto.modelo}</span></h3>
 
         <div className="mc__tags">
-          {cfg.ano && moto.ano   && <span className="mc__tag">{moto.ano}</span>}
-          {cfg.cor && moto.cor   && <span className="mc__tag">{moto.cor}</span>}
+          {cfg.ano && moto.ano      && <span className="mc__tag">{moto.ano}</span>}
+          {cfg.cor && moto.cor      && <span className="mc__tag">{moto.cor}</span>}
           {cfg.km  && moto.km != null && IS_VENDA && (
             <span className="mc__tag">{moto.km === 0 ? "0 km" : fmtKm(moto.km)}</span>
           )}
@@ -130,13 +161,21 @@ function MotoCard({ moto, config, onPhoto }) {
                 {cfg.entrada && moto.entrada && <span>Entrada: <strong>{fmt(moto.entrada)}</strong></span>}
                 {cfg.parcela && moto.parcela && <span> · <strong>{fmt(moto.parcela)}/mês</strong></span>}
               </div>
+              {cfg.simulacao && (
+                <a className="mc__simulacao" href={wa(`Olá! Quero simular a promissória da ${moto.marca} ${moto.modelo}.`)} target="_blank" rel="noreferrer">
+                  Simular promissória →
+                </a>
+              )}
             </>
           ) : (
             <>
-              {cfg.preco_mensal && moto.preco_mensal && (
+              {cfg.preco_mensal  && moto.preco_mensal  && (
                 <div className="mc__preco">{fmt(moto.preco_mensal)}<span className="mc__unit">/mês</span></div>
               )}
-              {cfg.preco_diaria && moto.preco_diaria && (
+              {cfg.preco_semanal && moto.preco_semanal && (
+                <div className="mc__diaria">{fmt(moto.preco_semanal)}/semana</div>
+              )}
+              {cfg.preco_diaria  && moto.preco_diaria  && (
                 <div className="mc__diaria">{fmt(moto.preco_diaria)}/dia</div>
               )}
             </>
@@ -156,7 +195,7 @@ function MotoCard({ moto, config, onPhoto }) {
   );
 }
 
-// ── Filtros ──────────────────────────────────────────────────────────────────
+// ── Filtros ───────────────────────────────────────────────────────────────────
 function Filters({ motos, filters, setFilters }) {
   const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
   const marcas     = uniq(motos.map(m => m.marca));
@@ -166,7 +205,6 @@ function Filters({ motos, filters, setFilters }) {
     ? Math.max(...motos.map(m => Number(m.preco      || 0)), 50000)
     : Math.max(...motos.map(m => Number(m.preco_mensal || 0)), 5000);
   const maxKm = Math.max(...motos.map(m => Number(m.km || 0)), 100000);
-
   const set = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
   return (
@@ -175,7 +213,6 @@ function Filters({ motos, filters, setFilters }) {
         <span className="fil__title">Filtros</span>
         <button className="fil__clear" onClick={() => setFilters({})}>Limpar</button>
       </div>
-
       {marcas.length > 0 && (
         <div className="fil__group">
           <label className="fil__label">Marca</label>
@@ -185,7 +222,6 @@ function Filters({ motos, filters, setFilters }) {
           </select>
         </div>
       )}
-
       {categorias.length > 0 && (
         <div className="fil__group">
           <label className="fil__label">Categoria</label>
@@ -195,7 +231,6 @@ function Filters({ motos, filters, setFilters }) {
           </select>
         </div>
       )}
-
       {cores.length > 0 && (
         <div className="fil__group">
           <label className="fil__label">Cor</label>
@@ -205,32 +240,20 @@ function Filters({ motos, filters, setFilters }) {
           </select>
         </div>
       )}
-
       {IS_VENDA && (
         <div className="fil__group">
-          <label className="fil__label">
-            Preço máximo · <strong>{fmt(filters.preco_max || maxPreco)}</strong>
-          </label>
-          <input
-            className="fil__range" type="range"
-            min={0} max={maxPreco} step={500}
+          <label className="fil__label">Preço máximo · <strong>{fmt(filters.preco_max || maxPreco)}</strong></label>
+          <input className="fil__range" type="range" min={0} max={maxPreco} step={500}
             value={filters.preco_max ?? maxPreco}
-            onChange={e => set("preco_max", Number(e.target.value))}
-          />
+            onChange={e => set("preco_max", Number(e.target.value))} />
         </div>
       )}
-
       {IS_VENDA && maxKm > 0 && (
         <div className="fil__group">
-          <label className="fil__label">
-            KM máximo · <strong>{fmtKm(filters.km_max ?? maxKm)}</strong>
-          </label>
-          <input
-            className="fil__range" type="range"
-            min={0} max={maxKm} step={1000}
+          <label className="fil__label">KM máximo · <strong>{fmtKm(filters.km_max ?? maxKm)}</strong></label>
+          <input className="fil__range" type="range" min={0} max={maxKm} step={1000}
             value={filters.km_max ?? maxKm}
-            onChange={e => set("km_max", Number(e.target.value))}
-          />
+            onChange={e => set("km_max", Number(e.target.value))} />
         </div>
       )}
     </aside>
@@ -239,8 +262,8 @@ function Filters({ motos, filters, setFilters }) {
 
 // ── App principal ─────────────────────────────────────────────────────────────
 function CatalogApp() {
-  const [motos,    setMotos]    = useState([]);
-  const [config,   setConfig]   = useState({});
+  const [motos,    setMotos]    = useState(SEED);
+  const [config,   setConfig]   = useState(CFG_DEFAULT);
   const [filters,  setFilters]  = useState({});
   const [loading,  setLoading]  = useState(true);
   const [carousel, setCarousel] = useState(null);
@@ -252,17 +275,13 @@ function CatalogApp() {
       : "Motos para Aluguel · Moto Fácil Sertãozinho";
 
     Promise.all([
-      fetch(`/api/motos?tipo=${TIPO}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch("/api/config").then(r => r.ok ? r.json() : {}).catch(() => {}),
-    ]).then(([m, c]) => {
-      const lista = Array.isArray(m) && m.length > 0 ? m : SEED;
-      setMotos(lista.filter(x => x.disponivel !== false));
-      setConfig(c || {});
+      sb.from("motos").select("*").eq("tipo", TIPO).eq("disponivel", true).order("destaque", { ascending: false }).order("created_at", { ascending: false }),
+      sb.from("config").select("*").eq("id", "global").single(),
+    ]).then(([{ data: motosData }, { data: cfgData }]) => {
+      if (motosData && motosData.length > 0) setMotos(motosData);
+      if (cfgData) setConfig(transformConfig(cfgData));
       setLoading(false);
-    }).catch(() => {
-      setMotos(SEED);
-      setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => motos.filter(m => {
@@ -286,12 +305,7 @@ function CatalogApp() {
       <header className="cat-nav">
         <a href="/" className="cat-back">← Voltar ao site</a>
         <a href="/" className="cat-brand">MOTO<span>FÁCIL</span></a>
-        <a
-          href={wa("Olá! Vim pelo site e quero saber sobre as motos disponíveis.")}
-          className="cat-wa"
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a href={wa("Olá! Vim pelo site e quero saber sobre as motos disponíveis.")} className="cat-wa" target="_blank" rel="noreferrer">
           WhatsApp
         </a>
       </header>
@@ -304,7 +318,6 @@ function CatalogApp() {
 
       <div className="cat-layout">
         <Filters motos={motos} filters={filters} setFilters={setFilters} />
-
         <main className="cat-main">
           <p className="cat-count">
             {loading
@@ -312,23 +325,12 @@ function CatalogApp() {
               : `${filtered.length} moto${filtered.length !== 1 ? "s" : ""} encontrada${filtered.length !== 1 ? "s" : ""}`
             }
           </p>
-
           {!loading && filtered.length === 0 && (
             <div className="cat-empty">
               <p>Nenhuma moto encontrada com esses filtros.</p>
               <button onClick={() => setFilters({})}>Limpar filtros</button>
             </div>
           )}
-
-          {!loading && motos.length === 0 && (
-            <div className="cat-empty">
-              <p>Nenhuma moto cadastrada ainda.</p>
-              <a href={wa("Olá! Quero saber quais motos estão disponíveis.")} target="_blank" rel="noreferrer">
-                Chamar no WhatsApp
-              </a>
-            </div>
-          )}
-
           <div className="cat-grid">
             {filtered.map(m => (
               <MotoCard key={m.id} moto={m} config={config} onPhoto={setCarousel} />
@@ -337,9 +339,7 @@ function CatalogApp() {
         </main>
       </div>
 
-      {carousel && (
-        <Carousel moto={carousel} onClose={() => setCarousel(null)} />
-      )}
+      {carousel && <Carousel moto={carousel} onClose={() => setCarousel(null)} />}
     </>
   );
 }
