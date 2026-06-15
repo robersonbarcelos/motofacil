@@ -493,7 +493,7 @@ function Select({ value, onChange, options }) {
 }
 
 // ─── MOTOS À VENDA ───────────────────────────────────────────────────────────
-function Sale({ t, p, filters, motos }) {
+function Sale({ t, p, filters, motos, priceCfg }) {
   const list = motos || [];
   return (
     <section className="catalog" id="venda">
@@ -505,7 +505,7 @@ function Sale({ t, p, filters, motos }) {
         <a className="btn btn--outline" href="/catalogo.html?tipo=venda">Ver catálogo completo</a>
       </div>
       <div className="catalog__grid">
-        {list.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="sale" idx={i} />)}
+        {list.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="sale" idx={i} priceCfg={priceCfg} />)}
         {list.length === 0 && (
           <div className="catalog__empty" data-reveal>
             <span className="mono">Nenhuma moto bate com esses filtros.</span>
@@ -520,11 +520,15 @@ function Sale({ t, p, filters, motos }) {
   );
 }
 
-function MotoCard({ c, t, p, mode, idx }) {
-  const priceLabel = mode === "sale" ? `R$ ${c.price.toLocaleString("pt-BR")}` : `R$ ${c.month ? c.month.toLocaleString("pt-BR") + "/mês" : c.week + "/sem"}`;
-  const priceSmall = mode === "sale"
-    ? (c.parcela ? `a partir de R$ ${c.parcela}/mês` : "ou parcelas que cabem no seu dia")
-    : `ou R$ ${c.day}/dia`;
+function MotoCard({ c, t, p, mode, idx, priceCfg }) {
+  const cfg = priceCfg || {};
+  const showPreco   = mode === "sale"   ? cfg.preco   !== false : cfg.preco_mensal !== false;
+  const showEntrada = mode === "sale"   && cfg.entrada !== false && c.entrada;
+  const showParcela = mode === "sale"   && cfg.parcela !== false && c.parcela;
+  const showDiaria  = mode === "rent"   && cfg.preco_diaria !== false && c.day;
+  const priceLabel  = mode === "sale"
+    ? (showPreco && c.price ? `R$ ${c.price.toLocaleString("pt-BR")}` : null)
+    : (showPreco && c.month ? `R$ ${c.month.toLocaleString("pt-BR")}/mês` : (showDiaria ? `R$ ${c.day}/dia` : null));
   const imgSrc = (c.fotos && c.fotos.length > 0) ? c.fotos[0] : MOTO_IMGS[idx % MOTO_IMGS.length];
   return (
     <article className="card" data-reveal style={{ "--d": `${idx * 80}ms`, borderRadius: t.radius }} data-cursor="hover">
@@ -546,10 +550,22 @@ function MotoCard({ c, t, p, mode, idx }) {
             <span>{c.cat}</span>
           </>)}
         </div>
+        {(priceLabel || showEntrada || showParcela) && (
         <div className="card__price">
-          <span className="card__price-big" style={{ color: mode === "sale" ? "#7A5A10" : t.accent }}>{priceLabel}</span>
-          <span className="card__price-small">{priceSmall}</span>
+          {priceLabel && <span className="card__price-big" style={{ color: mode === "sale" ? "#7A5A10" : t.accent }}>{priceLabel}</span>}
+          {(showEntrada || showParcela) && (
+            <span className="card__price-small">
+              {showEntrada ? `Entrada: R$ ${c.entrada.toLocaleString("pt-BR")}` : ""}
+              {showEntrada && showParcela ? " · " : ""}
+              {showParcela ? `R$ ${c.parcela.toLocaleString("pt-BR")}/mês` : ""}
+              {!showEntrada && !showParcela ? "ou parcelas que cabem no seu dia" : ""}
+            </span>
+          )}
+          {!showEntrada && !showParcela && priceLabel && mode === "sale" && (
+            <span className="card__price-small">ou parcelas que cabem no seu dia</span>
+          )}
         </div>
+        )}
         <a className="card__cta btn btn--wa btn--full" href={wa(t.whatsappNumber, `Olá! Quero saber sobre a ${c.name} (${mode === "sale" ? "compra" : "aluguel"}).`)} target="_blank" rel="noreferrer" aria-label={`Tenho interesse: ${c.name}`}>
           <SocialIcon kind="whatsapp" size={15} /> Tenho interesse
         </a>
@@ -559,8 +575,8 @@ function MotoCard({ c, t, p, mode, idx }) {
 }
 
 // ─── MOTOS PARA ALUGUEL ──────────────────────────────────────────────────────
-function Rental({ t, p, motos }) {
-  const list = motos || MODELS_RENT;
+function Rental({ t, p, motos, priceCfg }) {
+  const list = motos || [];
   return (
     <section className="catalog catalog--rent" id="aluguel">
       <div className="section__head section__head--row" data-reveal>
@@ -572,7 +588,7 @@ function Rental({ t, p, motos }) {
         <a className="btn btn--outline" href="/catalogo.html?tipo=aluguel">Ver motos para aluguel</a>
       </div>
       <div className="catalog__grid">
-        {list.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="rent" idx={i} />)}
+        {list.map((c, i) => <MotoCard key={c.name + i} c={c} t={t} p={p} mode="rent" idx={i} priceCfg={priceCfg} />)}
       </div>
       <div className="rent__incl" data-reveal style={{ borderRadius: t.radius }}>
         <span className="section__tag rent__incl-tag" style={{ color: "var(--accent2)" }}>INCLUSO NO ALUGUEL</span>
@@ -929,11 +945,21 @@ function App() {
   const [filters, setFilters] = useState({ cat: "Todas", brand: "Todas", year: "Todos", color: "Todas", km: "", price: "" });
   const [saleMotos, setSaleMotos] = useState([]);
   const [rentMotos, setRentMotos] = useState([]);
+  const [priceCfg,  setPriceCfg]  = useState({ venda: { preco: true, entrada: true, parcela: true }, aluguel: { preco_mensal: true, preco_diaria: true } });
   const p = PALETTES[t.palette] || PALETTES.motofacil;
   useReveal();
 
-  // Busca motos do Supabase
+  // Busca config e motos do Supabase
   useEffect(() => {
+    sb.from("config").select("*").eq("id", "global").single()
+      .then(({ data }) => {
+        if (!data) return;
+        setPriceCfg({
+          venda:   { preco: data.venda_preco, entrada: data.venda_entrada, parcela: data.venda_parcela },
+          aluguel: { preco_mensal: data.aluguel_mensal, preco_diaria: data.aluguel_diaria },
+        });
+      }).catch(() => {});
+
     sb.from("motos").select("*").eq("disponivel", true)
       .order("capa",     { ascending: false })
       .order("destaque", { ascending: false })
@@ -982,8 +1008,8 @@ function App() {
         <FeatureBelts t={t} />
         {t.marquee && <Marquee accent2={t.accent2} />}
         {t.showFilters && <QuickFilters filters={filters} setFilters={setFilters} t={t} motoCount={filtered.length} motos={saleMotos} />}
-        {t.showSale && <Sale t={t} p={p} filters={filters} motos={filtered} />}
-        {t.showRental && <Rental t={t} p={p} motos={rentMotos} />}
+        {t.showSale && <Sale t={t} p={p} filters={filters} motos={filtered} priceCfg={priceCfg.venda} />}
+        {t.showRental && <Rental t={t} p={p} motos={rentMotos} priceCfg={priceCfg.aluguel} />}
         {t.showProcess && <Process t={t} />}
         {t.showFeatures && <Features t={t} />}
         {t.showTestimonials && <Testimonials t={t} />}
