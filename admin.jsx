@@ -164,13 +164,18 @@ function FocalPicker({ url, focal, onChange }) {
 }
 
 // ── Formulário de moto (adicionar / editar) ────────────────────────────────────
-function MotoForm({ moto: initial, onSave, onCancel }) {
+function MotoForm({ moto: initial, onSave, onCancel, marcas: marcasList, categorias: categoriasList }) {
+  const MARCAS_DEFAULT     = ["Honda","Yamaha","Suzuki","Kawasaki","BMW","Ducati","Triumph","Outra"];
+  const CATEGORIAS_DEFAULT = ["urbana","trail","esportiva","scooter","elétrica","custom","outra"];
+  const MARCAS     = marcasList?.length     ? marcasList     : MARCAS_DEFAULT;
+  const CATEGORIAS = categoriasList?.length ? categoriasList : CATEGORIAS_DEFAULT;
+
   const isEdit = !!initial?.id;
   const blank = {
-    tipo:"venda", marca:"Honda", modelo:"", ano: new Date().getFullYear(),
+    tipo:"venda", marca: MARCAS[0] || "Honda", modelo:"", ano: new Date().getFullYear(),
     km:0, preco:"", entrada:"", parcela:"",
     preco_diaria:"", preco_semanal:"", preco_mensal:"",
-    cor:"", categoria:"urbana", fotos:[], fotos_focal:[], disponivel:true,
+    cor:"", categoria: CATEGORIAS[0] || "urbana", fotos:[], fotos_focal:[], disponivel:true,
     destaque:false, capa:false, observacoes:"",
   };
   const [form,       setForm]       = useState(initial || blank);
@@ -489,7 +494,40 @@ function MotosList({ motos, loading, onEdit, onToggle, onDelete }) {
   );
 }
 
-// ── Painel de Configuração de Preços ──────────────────────────────────────────
+// ── Gerenciador de lista (marcas / categorias) ────────────────────────────────
+function ListManager({ title, items, onChange }) {
+  const [input, setInput] = useState("");
+  const add = () => {
+    const v = input.trim();
+    if (!v || items.includes(v)) return;
+    onChange([...items, v]);
+    setInput("");
+  };
+  const remove = (item) => onChange(items.filter(i => i !== item));
+  return (
+    <div className="cfg-list-manager">
+      <h3 className="cfg-group__title">{title}</h3>
+      <div className="cfg-list-tags">
+        {items.map(item => (
+          <span key={item} className="cfg-tag">
+            {item}
+            <button type="button" onClick={() => remove(item)} title="Remover">✕</button>
+          </span>
+        ))}
+      </div>
+      <div className="cfg-list-add">
+        <input
+          type="text" value={input} placeholder="Novo item..."
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && (e.preventDefault(), add())}
+        />
+        <button type="button" className="btn-secondary btn-sm" onClick={add}>+ Adicionar</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Painel de Configuração ─────────────────────────────────────────────────────
 function ConfigPanel({ onMsg }) {
   const [cfg,  setCfg]  = useState(null);
   const [busy, setBusy] = useState(false);
@@ -516,43 +554,60 @@ function ConfigPanel({ onMsg }) {
 
   return (
     <div className="cfg-panel">
-      <p className="cfg-desc">Define globalmente quais informações são exibidas no catálogo público. Aplicado a todas as motos automaticamente.</p>
 
-      <div className="cfg-cols">
-        <div className="cfg-group">
-          <h3 className="cfg-group__title">🏍️ Motos à Venda</h3>
-          {[
-            ["venda_preco",     "Valor de venda (R$)"],
-            ["venda_entrada",   "Valor de entrada"],
-            ["venda_parcela",   "Valor da parcela/mês"],
-            ["venda_simulacao", "Botão: Simular Promissória"],
-          ].map(([key, label]) => (
-            <label key={key} className="cfg-check">
-              <input type="checkbox" checked={!!cfg[key]} onChange={e => set(key, e.target.checked)} />
-              {label}
-            </label>
-          ))}
+      <section className="cfg-section">
+        <h2 className="cfg-section__title">Exibição de preços no catálogo</h2>
+        <p className="cfg-desc">Define quais informações são exibidas publicamente. Aplicado a todas as motos automaticamente.</p>
+        <div className="cfg-cols">
+          <div className="cfg-group">
+            <h3 className="cfg-group__title">🏍️ Motos à Venda</h3>
+            {[
+              ["venda_preco",     "Valor de venda (R$)"],
+              ["venda_entrada",   "Valor de entrada"],
+              ["venda_parcela",   "Valor da parcela/mês"],
+              ["venda_simulacao", "Botão: Simular Promissória"],
+            ].map(([key, label]) => (
+              <label key={key} className="cfg-check">
+                <input type="checkbox" checked={!!cfg[key]} onChange={e => set(key, e.target.checked)} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <div className="cfg-group">
+            <h3 className="cfg-group__title">📋 Motos para Aluguel</h3>
+            {[
+              ["aluguel_diaria",  "Valor da diária"],
+              ["aluguel_semanal", "Valor semanal"],
+              ["aluguel_mensal",  "Valor mensal"],
+            ].map(([key, label]) => (
+              <label key={key} className="cfg-check">
+                <input type="checkbox" checked={!!cfg[key]} onChange={e => set(key, e.target.checked)} />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
-
-        <div className="cfg-group">
-          <h3 className="cfg-group__title">📋 Motos para Aluguel</h3>
-          {[
-            ["aluguel_diaria",  "Valor da diária"],
-            ["aluguel_semanal", "Valor semanal"],
-            ["aluguel_mensal",  "Valor mensal"],
-          ].map(([key, label]) => (
-            <label key={key} className="cfg-check">
-              <input type="checkbox" checked={!!cfg[key]} onChange={e => set(key, e.target.checked)} />
-              {label}
-            </label>
-          ))}
+        <div className="cfg-rules">
+          <p>⚠️ Desmarcar todas as opções de preço oculta os preços do catálogo público.</p>
         </div>
-      </div>
+      </section>
 
-      <div className="cfg-rules">
-        <p>⚠️ Desmarcar todas as opções de preço oculta os preços do catálogo público.</p>
-        <p>✅ Alterações entram em vigor imediatamente no site.</p>
-      </div>
+      <section className="cfg-section">
+        <h2 className="cfg-section__title">Marcas e Categorias</h2>
+        <p className="cfg-desc">Gerencie as opções disponíveis nos formulários de cadastro de motos.</p>
+        <div className="cfg-cols">
+          <ListManager
+            title="🏷️ Marcas"
+            items={cfg.marcas || []}
+            onChange={v => set("marcas", v)}
+          />
+          <ListManager
+            title="📂 Categorias"
+            items={cfg.categorias || []}
+            onChange={v => set("categorias", v)}
+          />
+        </div>
+      </section>
 
       <button className="btn-primary" onClick={save} disabled={busy}>
         {busy ? "Salvando..." : "Salvar configuração"}
@@ -614,6 +669,7 @@ function AdminApp() {
   const [msg,     setMsg]     = useState("");
   const [confirm, setConfirm] = useState(null);
   const [filtro,  setFiltro]  = useState("todos"); // todos | destaque | capa | venda | aluguel
+  const [cfgListas, setCfgListas] = useState({ marcas: [], categorias: [] });
 
   // Auth state
   useEffect(() => {
@@ -635,7 +691,13 @@ function AdminApp() {
     setMLoading(false);
   }, []);
 
-  useEffect(() => { if (user) loadMotos(); }, [user]);
+  useEffect(() => {
+    if (user) {
+      loadMotos();
+      sb.from("config").select("marcas,categorias").eq("id", "global").single()
+        .then(({ data }) => { if (data) setCfgListas({ marcas: data.marcas || [], categorias: data.categorias || [] }); });
+    }
+  }, [user]);
 
   const showMsg = (m) => { setMsg(m); setTimeout(() => setMsg(""), 3500); };
 
@@ -746,6 +808,8 @@ function AdminApp() {
           moto={form?.id ? form : null}
           onSave={handleSave}
           onCancel={() => setForm(null)}
+          marcas={cfgListas.marcas}
+          categorias={cfgListas.categorias}
         />
       )}
 

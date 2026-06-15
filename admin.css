@@ -405,3 +405,29 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   opacity: 0; transition: opacity 0.2s;
 }
 .focal-wrap:hover .focal-hint { opacity: 1; }
+
+/* ── Config sections / list manager ── */
+.cfg-section { margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.cfg-section:last-of-type { border-bottom: none; }
+.cfg-section__title { font-size: 14px; font-weight: 700; color: var(--fg); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.cfg-list-manager { display: flex; flex-direction: column; gap: 10px; }
+.cfg-list-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+.cfg-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1px solid var(--line);
+  color: var(--fg); font-size: 13px; padding: 4px 10px;
+  border-radius: 99px;
+}
+.cfg-tag button {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 12px; padding: 0; line-height: 1;
+  transition: color 0.15s;
+}
+.cfg-tag button:hover { color: #ef4444; }
+.cfg-list-add { display: flex; gap: 8px; }
+.cfg-list-add input {
+  flex: 1; padding: 7px 12px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid var(--line);
+  color: var(--fg); font-size: 13px;
+}
+.cfg-list-add input:focus { outline: none; border-color: var(--accent); }
