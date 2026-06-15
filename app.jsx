@@ -546,7 +546,7 @@ function MotoCard({ c, t, p, mode, idx }) {
           <span className="card__price-big" style={{ color: mode === "sale" ? "#7A5A10" : t.accent }}>{priceLabel}</span>
           <span className="card__price-small">{priceSmall}</span>
         </div>
-        <a className="card__cta btn btn--wa btn--full" href={wa(t.whatsappNumber, `Olá! Quero saber sobre a ${c.name} (${mode === "sale" ? "compra" : "aluguel"}).`)} target="_blank" rel="noreferrer">
+        <a className="card__cta btn btn--wa btn--full" href={wa(t.whatsappNumber, `Olá! Quero saber sobre a ${c.name} (${mode === "sale" ? "compra" : "aluguel"}).`)} target="_blank" rel="noreferrer" aria-label={`Tenho interesse: ${c.name}`}>
           <SocialIcon kind="whatsapp" size={15} /> Tenho interesse
         </a>
       </div>
