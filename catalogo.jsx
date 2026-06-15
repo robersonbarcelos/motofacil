@@ -338,17 +338,16 @@ function CatalogApp() {
       ? "Motos à Venda · Moto Fácil Sertãozinho"
       : "Motos para Aluguel · Moto Fácil Sertãozinho";
 
-    Promise.all([
-      sb.from("motos").select("*").eq("tipo", TIPO).eq("disponivel", true)
-        .order("capa",     { ascending: false })
-        .order("destaque", { ascending: false })
-        .order("created_at", { ascending: false }),
-      sb.from("config").select("*").eq("id", "global").single(),
-    ]).then(([{ data: motosData }, { data: cfgData }]) => {
-      setMotos(motosData || []);
-      if (cfgData) setConfig(transformConfig(cfgData));
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    sb.from("config").select("*").eq("id", "global").single()
+      .then(({ data }) => { if (data) setConfig(transformConfig(data)); })
+      .catch(() => {});
+
+    sb.from("motos").select("*").eq("tipo", TIPO).eq("disponivel", true)
+      .order("capa",     { ascending: false })
+      .order("destaque", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { setMotos(data || []); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   const capaMotos = useMemo(() => motos.filter(m => m.capa), [motos]);
