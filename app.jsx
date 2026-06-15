@@ -927,8 +927,8 @@ function apiToRent(m) {
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [filters, setFilters] = useState({ cat: "Todas", brand: "Todas", year: "Todos", color: "Todas", km: "", price: "" });
-  const [saleMotos, setSaleMotos] = useState(MODELS_SALE);
-  const [rentMotos, setRentMotos] = useState(MODELS_RENT);
+  const [saleMotos, setSaleMotos] = useState([]);
+  const [rentMotos, setRentMotos] = useState([]);
   const p = PALETTES[t.palette] || PALETTES.motofacil;
   useReveal();
 
