@@ -220,6 +220,7 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
   const featured = useMemo(() => motos.slice(0, 3), [motos]);
   const [idx, setIdx] = useState(0);
   const [dir, setDir] = useState(1);
+  const touchX = useRef(null);
 
   const go = (next) => {
     setDir(next > idx ? 1 : -1);
@@ -227,6 +228,14 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
   };
   const prev = () => go((idx - 1 + featured.length) % featured.length);
   const next = () => go((idx + 1) % featured.length);
+
+  const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchX.current === null) return;
+    const diff = touchX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) diff > 0 ? next() : prev();
+    touchX.current = null;
+  };
 
   useEffect(() => {
     if (featured.length < 2) return;
@@ -245,7 +254,8 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
   const heroFp = (moto.fotos_focal && moto.fotos_focal[0]) ? moto.fotos_focal[0] : { x: 50, y: 50 };
 
   return (
-    <div className="hcar" style={{ borderRadius: t.radius * 1.4 }}>
+    <div className="hcar" style={{ borderRadius: t.radius * 1.4 }}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="hcar__slide" key={idx}>
         <img className="hcar__img" src={imgSrc} alt={moto.name} loading="eager" style={{ objectPosition: `${heroFp.x}% ${heroFp.y}%` }} />
         <div className="hcar__overlay" />
