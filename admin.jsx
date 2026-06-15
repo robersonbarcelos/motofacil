@@ -89,47 +89,76 @@ function Login({ onLogin }) {
   );
 }
 
-// ── Focal Point Picker ────────────────────────────────────────────────────────
+// ── Focal Point Picker ─── arraste para reposicionar (igual Instagram) ─────────
 function FocalPicker({ url, focal, onChange }) {
-  const ref = useRef(null);
+  const wrapRef  = useRef(null);
+  const imgRef   = useRef(null);
   const dragging = useRef(false);
+  const lastXY   = useRef({ x: 0, y: 0 });
+  const posRef   = useRef(focal || { x: 50, y: 50 });
+  const cbRef    = useRef(onChange);
+  cbRef.current  = onChange;
+  const [pos, setPos] = useState(focal || { x: 50, y: 50 });
 
-  const calc = useCallback((e) => {
-    const rect = ref.current.getBoundingClientRect();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    const x = Math.round(Math.max(0, Math.min(100, ((cx - rect.left) / rect.width) * 100)));
-    const y = Math.round(Math.max(0, Math.min(100, ((cy - rect.top) / rect.height) * 100)));
-    onChange({ x, y });
-  }, [onChange]);
+  const getXY = (e) => ({
+    x: e.touches ? e.touches[0].clientX : e.clientX,
+    y: e.touches ? e.touches[0].clientY : e.clientY,
+  });
 
   useEffect(() => {
-    const up = () => { dragging.current = false; };
-    const move = (e) => { if (dragging.current) calc(e); };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
-    window.addEventListener("touchmove", move, { passive: false });
-    window.addEventListener("touchend", up);
-    return () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
-      window.removeEventListener("touchmove", move);
-      window.removeEventListener("touchend", up);
-    };
-  }, [calc]);
+    const onMove = (e) => {
+      if (!dragging.current || !wrapRef.current || !imgRef.current) return;
+      e.preventDefault();
+      const cur = getXY(e);
+      const dx = cur.x - lastXY.current.x;
+      const dy = cur.y - lastXY.current.y;
+      lastXY.current = cur;
 
-  const fp = focal || { x: 50, y: 50 };
+      const cRect = wrapRef.current.getBoundingClientRect();
+      const img   = imgRef.current;
+      if (!img.naturalWidth) return;
+
+      const ir = img.naturalWidth / img.naturalHeight;
+      const cr = cRect.width / cRect.height;
+      let iW, iH;
+      if (ir > cr) { iH = cRect.height; iW = iH * ir; }
+      else         { iW = cRect.width;  iH = iW / ir; }
+
+      const ovX = Math.max(0, iW - cRect.width);
+      const ovY = Math.max(0, iH - cRect.height);
+      const p   = posRef.current;
+
+      const nx = ovX > 0 ? Math.round(Math.max(0, Math.min(100, ((p.x / 100) * ovX - dx) / ovX * 100))) : 50;
+      const ny = ovY > 0 ? Math.round(Math.max(0, Math.min(100, ((p.y / 100) * ovY - dy) / ovY * 100))) : 50;
+
+      posRef.current = { x: nx, y: ny };
+      setPos({ x: nx, y: ny });
+      cbRef.current({ x: nx, y: ny });
+    };
+    const onEnd = () => { dragging.current = false; };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onEnd);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend",  onEnd);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup",   onEnd);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend",  onEnd);
+    };
+  }, []);
+
   return (
     <div
-      ref={ref}
+      ref={wrapRef}
       className="focal-wrap"
-      onMouseDown={(e) => { dragging.current = true; calc(e); }}
-      onTouchStart={(e) => { dragging.current = true; calc(e); }}
+      onMouseDown={(e) => { e.preventDefault(); dragging.current = true; lastXY.current = getXY(e); }}
+      onTouchStart={(e) => { dragging.current = true; lastXY.current = getXY(e); }}
     >
-      <img src={url} alt="" className="focal-img" draggable={false} />
-      <div className="focal-dot" style={{ left: `${fp.x}%`, top: `${fp.y}%` }} />
-      <div className="focal-hint">Arraste para definir o recorte</div>
-      <div className="focal-coords">{fp.x}% · {fp.y}%</div>
+      <img ref={imgRef} src={url} alt="" className="focal-img"
+        style={{ objectPosition: `${pos.x}% ${pos.y}%` }} draggable={false} />
+      <div className="focal-hint">Arraste para reposicionar</div>
     </div>
   );
 }
