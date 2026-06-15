@@ -89,6 +89,51 @@ function Login({ onLogin }) {
   );
 }
 
+// ── Focal Point Picker ────────────────────────────────────────────────────────
+function FocalPicker({ url, focal, onChange }) {
+  const ref = useRef(null);
+  const dragging = useRef(false);
+
+  const calc = useCallback((e) => {
+    const rect = ref.current.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = Math.round(Math.max(0, Math.min(100, ((cx - rect.left) / rect.width) * 100)));
+    const y = Math.round(Math.max(0, Math.min(100, ((cy - rect.top) / rect.height) * 100)));
+    onChange({ x, y });
+  }, [onChange]);
+
+  useEffect(() => {
+    const up = () => { dragging.current = false; };
+    const move = (e) => { if (dragging.current) calc(e); };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", up);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      window.removeEventListener("touchmove", move);
+      window.removeEventListener("touchend", up);
+    };
+  }, [calc]);
+
+  const fp = focal || { x: 50, y: 50 };
+  return (
+    <div
+      ref={ref}
+      className="focal-wrap"
+      onMouseDown={(e) => { dragging.current = true; calc(e); }}
+      onTouchStart={(e) => { dragging.current = true; calc(e); }}
+    >
+      <img src={url} alt="" className="focal-img" draggable={false} />
+      <div className="focal-dot" style={{ left: `${fp.x}%`, top: `${fp.y}%` }} />
+      <div className="focal-hint">Arraste para definir o recorte</div>
+      <div className="focal-coords">{fp.x}% · {fp.y}%</div>
+    </div>
+  );
+}
+
 // ── Formulário de moto (adicionar / editar) ────────────────────────────────────
 function MotoForm({ moto: initial, onSave, onCancel }) {
   const isEdit = !!initial?.id;
@@ -96,7 +141,7 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
     tipo:"venda", marca:"Honda", modelo:"", ano: new Date().getFullYear(),
     km:0, preco:"", entrada:"", parcela:"",
     preco_diaria:"", preco_semanal:"", preco_mensal:"",
-    cor:"", categoria:"urbana", fotos:[], disponivel:true,
+    cor:"", categoria:"urbana", fotos:[], fotos_focal:[], disponivel:true,
     destaque:false, capa:false, observacoes:"",
   };
   const [form,       setForm]       = useState(initial || blank);
@@ -107,6 +152,12 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
   const fileRef = useRef();
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const setFocal = (idx, fp) => setForm(f => {
+    const arr = [...(f.fotos_focal || [])];
+    arr[idx] = fp;
+    return { ...f, fotos_focal: arr };
+  });
 
   const handleFiles = async (files) => {
     const arr = Array.from(files);
@@ -121,14 +172,22 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
         const url = await uploadFoto(arr[i], id, form.fotos.length + i);
         urls.push(url);
       }
-      setForm(f => ({ ...f, fotos: [...f.fotos, ...urls] }));
+      setForm(f => ({
+        ...f,
+        fotos: [...f.fotos, ...urls],
+        fotos_focal: [...(f.fotos_focal || []), ...urls.map(() => ({ x: 50, y: 50 }))],
+      }));
     } catch (e) {
       setErr("Erro no upload: " + e.message);
     }
     setUploading(false); setUploadProg("");
   };
 
-  const removePhoto = (idx) => setForm(f => ({ ...f, fotos: f.fotos.filter((_, i) => i !== idx) }));
+  const removePhoto = (idx) => setForm(f => ({
+    ...f,
+    fotos: f.fotos.filter((_, i) => i !== idx),
+    fotos_focal: (f.fotos_focal || []).filter((_, i) => i !== idx),
+  }));
 
   const submit = async (e) => {
     e.preventDefault();
@@ -153,7 +212,8 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
       preco_semanal: form.tipo === "aluguel" ? (Number(form.preco_semanal) || null) : null,
       preco_mensal:  form.tipo === "aluguel" ? (Number(form.preco_mensal)  || null) : null,
       cor: form.cor.trim(), categoria: form.categoria,
-      fotos: form.fotos, disponivel: form.disponivel,
+      fotos: form.fotos, fotos_focal: form.fotos_focal || [],
+      disponivel: form.disponivel,
       destaque: form.destaque, capa: form.capa, observacoes: form.observacoes.trim(),
     };
     let result, error;
@@ -300,7 +360,11 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
               <div className="mf-photos__grid">
                 {form.fotos.map((url, i) => (
                   <div key={i} className="mf-photo">
-                    <img src={url} alt={`Foto ${i + 1}`} />
+                    <FocalPicker
+                      url={url}
+                      focal={(form.fotos_focal || [])[i] || { x: 50, y: 50 }}
+                      onChange={(fp) => setFocal(i, fp)}
+                    />
                     <button type="button" className="mf-photo__del" onClick={() => removePhoto(i)} title="Remover">✕</button>
                     {i === 0 && <span className="mf-photo__main">Principal</span>}
                   </div>

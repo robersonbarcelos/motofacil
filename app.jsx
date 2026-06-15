@@ -245,11 +245,12 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
   const imgSrc = (moto.fotos && moto.fotos.length > 0)
     ? moto.fotos[0]
     : MOTO_IMGS[idx % MOTO_IMGS.length];
+  const heroFp = (moto.fotos_focal && moto.fotos_focal[0]) ? moto.fotos_focal[0] : { x: 50, y: 50 };
 
   return (
     <div className="hcar" style={{ borderRadius: t.radius * 1.4 }}>
       <div className="hcar__slide" key={idx}>
-        <img className="hcar__img" src={imgSrc} alt={moto.name} loading="eager" />
+        <img className="hcar__img" src={imgSrc} alt={moto.name} loading="eager" style={{ objectPosition: `${heroFp.x}% ${heroFp.y}%` }} />
         <div className="hcar__overlay" />
         <div className="hcar__info">
           <span className="hcar__tag" style={{ background: t.accent2 }}>EM DESTAQUE</span>
@@ -520,15 +521,16 @@ function Sale({ t, p, filters, motos, priceCfg }) {
   );
 }
 
-function CardPhotoCarousel({ fotos, name, radius }) {
+function CardPhotoCarousel({ fotos, fotos_focal, name, radius }) {
   const [fi, setFi] = useState(0);
   const imgs = fotos && fotos.length > 0 ? fotos : MOTO_IMGS;
   const total = imgs.length;
   const prev = (e) => { e.stopPropagation(); setFi(i => (i - 1 + total) % total); };
   const next = (e) => { e.stopPropagation(); setFi(i => (i + 1) % total); };
+  const fp = (fotos_focal && fotos_focal[fi]) ? fotos_focal[fi] : { x: 50, y: 50 };
   return (
     <div className="card__img" style={{ borderRadius: `${radius}px ${radius}px 0 0` }}>
-      <img src={imgs[fi]} alt={name} loading="lazy" />
+      <img src={imgs[fi]} alt={name} loading="lazy" style={{ objectPosition: `${fp.x}% ${fp.y}%` }} />
       {total > 1 && (<>
         <button className="card__carr-btn card__carr-btn--prev" onClick={prev} aria-label="Foto anterior">‹</button>
         <button className="card__carr-btn card__carr-btn--next" onClick={next} aria-label="Próxima foto">›</button>
@@ -552,7 +554,7 @@ function MotoCard({ c, t, p, mode, idx, priceCfg }) {
   return (
     <article className="card" data-reveal style={{ "--d": `${idx * 80}ms`, borderRadius: t.radius }} data-cursor="hover">
       <div style={{ position: "relative" }}>
-        <CardPhotoCarousel fotos={c.fotos} name={c.name} radius={t.radius} />
+        <CardPhotoCarousel fotos={c.fotos} fotos_focal={c.fotos_focal} name={c.name} radius={t.radius} />
         {c.pop && <span className="card__badge" style={{ background: t.accent, color: "#111" }}>POPULAR</span>}
         {mode === "rent" && <span className="card__badge card__badge--rent" style={{ background: t.accent2, color: "#fff" }}>ALUGUEL</span>}
       </div>
@@ -940,6 +942,7 @@ function apiToSale(m) {
     cat:   cap(m.categoria || ""),
     pop:   !!m.capa,
     fotos: m.fotos || [],
+    fotos_focal: m.fotos_focal || [],
     obs:   m.observacoes || "",
     entrada: m.entrada,
     parcela: m.parcela,
@@ -955,6 +958,7 @@ function apiToRent(m) {
     cat:   m.observacoes || m.categoria || "",
     pop:   !!m.capa,
     fotos: m.fotos || [],
+    fotos_focal: m.fotos_focal || [],
   };
 }
 

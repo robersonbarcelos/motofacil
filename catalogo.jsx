@@ -118,7 +118,8 @@ function MotoCard({ moto, config, onPhoto }) {
         onKeyDown={e => e.key === "Enter" && fotos.length > 0 && onPhoto(moto)}
       >
         {thumb
-          ? <img src={thumb} alt={`${moto.marca} ${moto.modelo}`} loading="lazy" />
+          ? <img src={thumb} alt={`${moto.marca} ${moto.modelo}`} loading="lazy"
+              style={{ objectPosition: moto.fotos_focal?.[0] ? `${moto.fotos_focal[0].x}% ${moto.fotos_focal[0].y}%` : "50% 50%" }} />
           : <div className="mc__nophoto">Sem foto</div>
         }
         {fotos.length > 1 && <span className="mc__count">📷 {fotos.length}</span>}
@@ -211,7 +212,8 @@ function HeroCarousel({ motos, config, onPhoto }) {
     <div className="hero-car">
       <div className="hero-car__img" onClick={() => m.fotos?.length > 0 && onPhoto(m)}>
         {thumb
-          ? <img src={thumb} alt={`${m.marca} ${m.modelo}`} />
+          ? <img src={thumb} alt={`${m.marca} ${m.modelo}`}
+              style={{ objectPosition: m.fotos_focal?.[0] ? `${m.fotos_focal[0].x}% ${m.fotos_focal[0].y}%` : "50% 50%" }} />
           : <div className="hero-car__nophoto"><span>📷</span><span>Foto em breve</span></div>
         }
         <div className="hero-car__overlay" />
