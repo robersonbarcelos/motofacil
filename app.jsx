@@ -1,6 +1,10 @@
 // app.jsx — Moto Fácil landing
 const { useState, useEffect, useRef, useMemo } = React;
 
+const SB_URL = "https://hxafbnhqvzgjyxhkpxxb.supabase.co";
+const SB_KEY = "sb_publishable_wmBhcq00_rhSujycjPoGfw_shkalHY5";
+const sb     = supabase.createClient(SB_URL, SB_KEY);
+
 // Production stubs — tweaks-panel.js only loads on localhost
 if (typeof useTweaks === 'undefined') {
   window.useTweaks   = (defaults) => [defaults, () => {}];
@@ -899,7 +903,7 @@ function apiToSale(m) {
     price: m.preco || 0,
     color: m.cor || "",
     cat:   cap(m.categoria || ""),
-    pop:   !!m.destaque,
+    pop:   !!m.capa,
     fotos: m.fotos || [],
     obs:   m.observacoes || "",
     entrada: m.entrada,
@@ -914,7 +918,7 @@ function apiToRent(m) {
     week:  m.preco_mensal ? Math.round(m.preco_mensal / 4) : 0,
     month: m.preco_mensal || 0,
     cat:   m.observacoes || m.categoria || "",
-    pop:   !!m.destaque,
+    pop:   !!m.capa,
     fotos: m.fotos || [],
   };
 }
@@ -928,17 +932,17 @@ function App() {
   const p = PALETTES[t.palette] || PALETTES.motofacil;
   useReveal();
 
-  // Busca motos da API — só no localhost (evita 404 no console em produção)
+  // Busca motos do Supabase
   useEffect(() => {
-    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    if (!isLocal) return;
-    fetch("/api/motos?tipo=venda")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data && data.length) setSaleMotos(data.filter(m => m.disponivel !== false).map(apiToSale)); })
-      .catch(() => {});
-    fetch("/api/motos?tipo=aluguel")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data && data.length) setRentMotos(data.filter(m => m.disponivel !== false).map(apiToRent)); })
+    sb.from("motos").select("*").eq("disponivel", true)
+      .order("capa",     { ascending: false })
+      .order("destaque", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (!data || !data.length) return;
+        setSaleMotos(data.filter(m => m.tipo === "venda").map(apiToSale));
+        setRentMotos(data.filter(m => m.tipo === "aluguel").map(apiToRent));
+      })
       .catch(() => {});
   }, []);
 
