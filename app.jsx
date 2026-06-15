@@ -284,7 +284,7 @@ function Hero({ t, p, motos }) {
       <div className="hero__blob hero__blob--b" style={{ background: `radial-gradient(closest-side, ${t.accent2}40, transparent 70%)` }} />
       <div className="hero__grid">
         <div className="hero__copy">
-          <img src="assets/logo-motofacil.webp" alt="Moto Fácil" className="hero__logo" width="800" height="597" fetchpriority="high" data-reveal />
+          <img src="assets/logo-motofacil.webp" alt="Moto Fácil" className="hero__logo" width="600" height="447" fetchpriority="high" data-reveal />
           <span className="section__tag hero__tag" style={{ color: t.accent }} data-reveal>
             VENDA · LOCAÇÃO · SEM CONSULTA AO SPC/SERASA
           </span>
@@ -828,7 +828,7 @@ function Footer({ t }) {
     <footer className="ftr">
       <div className="ftr__top">
         <div className="ftr__brand">
-          <img src="assets/logo-motofacil.webp" alt={t.brandName} className="ftr__logo" width="800" height="597" loading="lazy" />
+          <img src="assets/logo-motofacil.webp" alt={t.brandName} className="ftr__logo" width="600" height="447" loading="lazy" />
           <p className="ftr__desc">Realizando o sonho de quem merecia mais. Sertãozinho/SP.</p>
           <div className="ftr__socials">
             <a href={t.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="ftr__soc"><SocialIcon kind="instagram" size={18} /></a>
