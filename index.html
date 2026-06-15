@@ -62,8 +62,21 @@
   </script>
   <script src="app.js"></script>
   <script>
-    // Hide static LCP shell once React fills the root
-    (function(){var r=document.getElementById('root'),s=document.getElementById('lcp-shell');if(!s)return;var o=new MutationObserver(function(){if(r.firstChild){s.style.display='none';o.disconnect();}});o.observe(r,{childList:true});})();
+    // Hide static LCP shell once React fills the root (fade out to avoid flash)
+    (function(){
+      var r=document.getElementById('root'),s=document.getElementById('lcp-shell');
+      if(!s)return;
+      s.style.transition='opacity 0.25s ease';
+      function hide(){
+        if(r.querySelector('.hero__logo')){
+          s.style.opacity='0';
+          setTimeout(function(){s.style.display='none';},260);
+          o.disconnect();
+        }
+      }
+      var o=new MutationObserver(hide);
+      o.observe(r,{childList:true,subtree:true});
+    })();
   </script>
 </body>
 </html>
