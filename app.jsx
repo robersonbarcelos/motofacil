@@ -254,20 +254,28 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
   const heroFp = (moto.fotos_focal && moto.fotos_focal[0]) ? moto.fotos_focal[0] : { x: 50, y: 50 };
 
   return (
-    <div className="hcar" style={{ borderRadius: t.radius * 1.4 }}
-      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <div className="hcar__slide" key={idx}>
-        <img className="hcar__img" src={imgSrc} alt={moto.name} loading="eager" style={{ objectPosition: `${heroFp.x}% ${heroFp.y}%` }} />
-        <div className="hcar__overlay" />
-        <div className="hcar__info">
-          <span className="hcar__tag" style={{ background: t.accent2 }}>EM DESTAQUE</span>
-          <p className="hcar__name">{moto.name}</p>
-          <div className="hcar__price">
-            {priceCfg?.preco !== false && moto.price > 0 && <span className="hcar__val">{moto.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</span>}
-            {moto.year && <span className="hcar__year">{moto.year}</span>}
+    <div className="hcar-wrap" style={{ borderRadius: t.radius * 1.4 }}>
+      <div className="hcar" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div className="hcar__slide" key={idx}>
+          <img className="hcar__img" src={imgSrc} alt={moto.name} loading="eager" style={{ objectPosition: `${heroFp.x}% ${heroFp.y}%` }} />
+          <div className="hcar__overlay" />
+          <div className="hcar__info">
+            <span className="hcar__tag" style={{ background: t.accent2 }}>EM DESTAQUE</span>
+            <p className="hcar__name">{moto.name}</p>
+            <div className="hcar__price">
+              {priceCfg?.preco !== false && moto.price > 0 && <span className="hcar__val">{moto.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</span>}
+              {moto.year && <span className="hcar__year">{moto.year}</span>}
+            </div>
+            <a className="btn btn--primary hcar__cta" href="#venda" style={{ background: t.accent, color: "#0A0A0A" }}>Ver moto</a>
           </div>
-          <a className="btn btn--primary hcar__cta" href="#venda" style={{ background: t.accent, color: "#0A0A0A" }}>Ver moto</a>
         </div>
+        {featured.length > 1 && (
+          <div className="hcar__dots">
+            {featured.map((_, i) => (
+              <button key={i} className={`hcar__dot${i === idx ? " hcar__dot--active" : ""}`} onClick={() => go(i)} aria-label={`Moto ${i + 1}`} style={i === idx ? { background: t.accent } : {}} />
+            ))}
+          </div>
+        )}
       </div>
       {featured.length > 1 && (
         <>
@@ -277,11 +285,6 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
           <button className="hcar__arrow hcar__arrow--next" onClick={next} aria-label="Próxima">
             <svg viewBox="0 0 10 16" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 2l6 6-6 6"/></svg>
           </button>
-          <div className="hcar__dots">
-            {featured.map((_, i) => (
-              <button key={i} className={`hcar__dot${i === idx ? " hcar__dot--active" : ""}`} onClick={() => go(i)} aria-label={`Moto ${i + 1}`} style={i === idx ? { background: t.accent } : {}} />
-            ))}
-          </div>
         </>
       )}
     </div>

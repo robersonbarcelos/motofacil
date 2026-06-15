@@ -296,9 +296,14 @@ html.reveal-armed .stores__grid[data-reveal]:not([data-revealed]) {
 .hero__frame:hover .hero__img { transform: scale(1.03); }
 
 /* ── HERO CAROUSEL ─────────────────────────────────────────────────────────── */
+.hcar-wrap {
+  position: relative; aspect-ratio: 4/5;
+  border: 1px solid var(--line);
+}
 .hcar {
-  position: relative; aspect-ratio: 4/5; overflow: hidden;
-  border: 1px solid var(--line); background: var(--surface);
+  position: absolute; inset: 0; overflow: hidden;
+  background: var(--surface); border-radius: inherit;
+  aspect-ratio: unset; border: none;
 }
 .hcar__slide {
   position: absolute; inset: 0;
@@ -382,7 +387,7 @@ html.reveal-armed .stores__grid[data-reveal]:not([data-revealed]) {
 .hcar__dot--active::before { background: rgba(255,255,255,0.9); transform: translate(-50%,-50%) scale(1.4); }
 .hcar__dot--active { background: transparent; }
 @media (max-width: 640px) {
-  .hcar { aspect-ratio: 4/3; }
+  .hcar-wrap { aspect-ratio: 4/3; }
   .hcar__dots { bottom: 70px; }
 }
 .hero__placeholder {
