@@ -216,7 +216,7 @@ function Nav({ t }) {
 }
 
 // ─── HERO CAROUSEL ───────────────────────────────────────────────────────────
-function HeroCarousel({ motos, t, p }) {
+function HeroCarousel({ motos, t, p, priceCfg }) {
   const featured = useMemo(() => {
     const pop = motos.filter(m => m.pop);
     return (pop.length >= 2 ? pop : motos).slice(0, 3);
@@ -255,7 +255,7 @@ function HeroCarousel({ motos, t, p }) {
           <span className="hcar__tag" style={{ background: t.accent2 }}>EM DESTAQUE</span>
           <p className="hcar__name">{moto.name}</p>
           <div className="hcar__price">
-            {moto.price > 0 && <span className="hcar__val">{moto.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</span>}
+            {priceCfg?.preco !== false && moto.price > 0 && <span className="hcar__val">{moto.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}</span>}
             {moto.year && <span className="hcar__year">{moto.year}</span>}
           </div>
           <a className="btn btn--primary hcar__cta" href="#venda" style={{ background: t.accent, color: "#0A0A0A" }}>Ver moto</a>
@@ -281,7 +281,7 @@ function HeroCarousel({ motos, t, p }) {
 }
 
 // ─── HERO ────────────────────────────────────────────────────────────────────
-function Hero({ t, p, motos }) {
+function Hero({ t, p, motos, priceCfg }) {
   return (
     <section className="hero" id="top">
       <div className="hero__blob hero__blob--a" style={{ background: `radial-gradient(closest-side, ${t.accent}40, transparent 70%)` }} />
@@ -307,7 +307,7 @@ function Hero({ t, p, motos }) {
           </div>
         </div>
         <div className="hero__art" data-reveal style={{ "--ry": "0px", "--rx": "32px" }}>
-          <HeroCarousel motos={motos} t={t} p={p} />
+          <HeroCarousel motos={motos} t={t} p={p} priceCfg={priceCfg} />
         </div>
       </div>
     </section>
@@ -1004,7 +1004,7 @@ function App() {
       <TopBar t={t} />
       <Nav t={t} />
       <main>
-        <Hero t={t} p={p} motos={saleMotos} />
+        <Hero t={t} p={p} motos={saleMotos} priceCfg={priceCfg.venda} />
         <FeatureBelts t={t} />
         {t.marquee && <Marquee accent2={t.accent2} />}
         {t.showFilters && <QuickFilters filters={filters} setFilters={setFilters} t={t} motoCount={filtered.length} motos={saleMotos} />}
