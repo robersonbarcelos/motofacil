@@ -941,8 +941,7 @@ html.reveal-armed .section__head[data-reveal][data-revealed] {
   .nav__right .btn { display: none; }
   .nav__burger { display: flex; }
   .hero__grid { grid-template-columns: 1fr; }
-  .hero__art { order: -1; max-width: 520px; margin: 0 auto; width: 100%; }
-  .hero__logo { display: none; }
+  .hero__art { max-width: 520px; margin: 0 auto; width: 100%; }
   .hero__frame { aspect-ratio: 16/10; border: 1px solid var(--line); background: var(--surface); }
   .hero__img { object-position: center center; }
   .proc__grid { grid-template-columns: 1fr; }
