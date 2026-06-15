@@ -217,10 +217,7 @@ function Nav({ t }) {
 
 // ─── HERO CAROUSEL ───────────────────────────────────────────────────────────
 function HeroCarousel({ motos, t, p, priceCfg }) {
-  const featured = useMemo(() => {
-    const pop = motos.filter(m => m.pop);
-    return (pop.length >= 2 ? pop : motos).slice(0, 3);
-  }, [motos]);
+  const featured = useMemo(() => motos.slice(0, 3), [motos]);
   const [idx, setIdx] = useState(0);
   const [dir, setDir] = useState(1);
 
@@ -968,6 +965,7 @@ function App() {
   const [filters, setFilters] = useState({ cat: "Todas", brand: "Todas", year: "Todos", color: "Todas", km: "", price: "" });
   const [saleMotos, setSaleMotos] = useState([]);
   const [rentMotos, setRentMotos] = useState([]);
+  const [capaMotos, setCapaMotos] = useState([]);
   const [priceCfg,  setPriceCfg]  = useState({ venda: { preco: true, entrada: true, parcela: true }, aluguel: { preco_mensal: true, preco_diaria: true } });
   const p = PALETTES[t.palette] || PALETTES.motofacil;
   useReveal();
@@ -989,8 +987,14 @@ function App() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (!data || !data.length) return;
-        setSaleMotos(data.filter(m => m.tipo === "venda").map(apiToSale));
-        setRentMotos(data.filter(m => m.tipo === "aluguel").map(apiToRent));
+        const vendas    = data.filter(m => m.tipo === "venda");
+        const alugueis  = data.filter(m => m.tipo === "aluguel");
+        const capas     = data.filter(m => m.capa).map(m =>
+          m.tipo === "venda" ? apiToSale(m) : apiToRent(m)
+        );
+        setSaleMotos(vendas.map(apiToSale));
+        setRentMotos(alugueis.map(apiToRent));
+        setCapaMotos(capas);
       })
       .catch(() => {});
   }, []);
@@ -1027,7 +1031,7 @@ function App() {
       <TopBar t={t} />
       <Nav t={t} />
       <main>
-        <Hero t={t} p={p} motos={saleMotos} priceCfg={priceCfg.venda} />
+        <Hero t={t} p={p} motos={capaMotos} priceCfg={priceCfg.venda} />
         <FeatureBelts t={t} />
         {t.marquee && <Marquee accent2={t.accent2} />}
         {t.showFilters && <QuickFilters filters={filters} setFilters={setFilters} t={t} motoCount={filtered.length} motos={saleMotos} />}
