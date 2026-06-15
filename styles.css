@@ -594,15 +594,21 @@ html.reveal-armed .section__head[data-reveal][data-revealed] {
   font-size: 72px; line-height: 1; margin-bottom: 16px;
   text-transform: uppercase;
 }
-.feat-belt h4, .feat-belt__title {
+.feat-belt h4 {
   position: relative; z-index: 1;
   font-family: var(--font-display), sans-serif; font-weight: 700;
   font-size: 20px; color: #0A0A0A; margin-bottom: 10px;
   text-transform: uppercase; letter-spacing: 0.01em;
 }
-.feat-belt p {
+.feat-belt .feat-belt__title {
   position: relative; z-index: 1;
-  font-size: 14px; color: #5a5248; line-height: 1.6; font-family: "Manrope", sans-serif;
+  font-family: var(--font-display), sans-serif; font-weight: 700;
+  font-size: 20px; color: #0A0A0A; margin-bottom: 10px;
+  text-transform: uppercase; letter-spacing: 0.01em;
+}
+.feat-belt p:not(.feat-belt__title) {
+  position: relative; z-index: 1;
+  font-size: 14px; color: #3d3328; line-height: 1.6; font-family: "Manrope", sans-serif;
 }
 @media (max-width: 640px) {
   .feat-belts__grid { grid-template-columns: 1fr; }

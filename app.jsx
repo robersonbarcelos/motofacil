@@ -532,7 +532,7 @@ function MotoCard({ c, t, p, mode, idx }) {
       <div className="card__body">
         <div className="card__top">
           <span className="card__brand mono">{c.brand}</span>
-          {mode === "sale" && c.km === 0 && <span className="card__zero mono" style={{ color: t.accent }}>0 KM</span>}
+          {mode === "sale" && c.km === 0 && <span className="card__zero mono" style={{ color: "#7A5A10" }}>0 KM</span>}
         </div>
         <h3 className="card__name">{c.name}</h3>
         <div className="card__meta mono">
@@ -543,7 +543,7 @@ function MotoCard({ c, t, p, mode, idx }) {
           </>)}
         </div>
         <div className="card__price">
-          <span className="card__price-big" style={{ color: t.accent }}>{priceLabel}</span>
+          <span className="card__price-big" style={{ color: mode === "sale" ? "#7A5A10" : t.accent }}>{priceLabel}</span>
           <span className="card__price-small">{priceSmall}</span>
         </div>
         <a className="card__cta btn btn--wa btn--full" href={wa(t.whatsappNumber, `Olá! Quero saber sobre a ${c.name} (${mode === "sale" ? "compra" : "aluguel"}).`)} target="_blank" rel="noreferrer">
