@@ -351,44 +351,44 @@ html.reveal-armed .stores__grid[data-reveal]:not([data-revealed]) {
   font-size: 13px; padding: 8px 18px; border-radius: 6px;
   font-weight: 700; text-decoration: none;
 }
+/* arrows posicionados em relação a .hcar-wrap (fora do overflow:hidden) */
 .hcar__arrow {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
-  color: #fff; width: 48px; height: 48px; border-radius: 50%;
+  position: absolute; top: 40%; transform: translateY(-50%);
+  background: rgba(10,10,10,0.55); border: 1px solid rgba(255,255,255,0.15);
+  color: #fff; width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: background 0.2s; backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer; transition: background 0.2s; backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 3; touch-action: manipulation;
 }
-.hcar__arrow:hover { background: rgba(255,255,255,0.30); }
+.hcar__arrow:hover { background: rgba(10,10,10,0.80); }
 .hcar__arrow--prev { left: 10px; }
 .hcar__arrow--next { right: 10px; }
-@media (max-width: 640px) {
-  .hcar__arrow { width: 44px; height: 44px; }
-  .hcar__arrow--prev { left: 6px; }
-  .hcar__arrow--next { right: 6px; }
-}
+/* dots abaixo da imagem — override do inline CSS que tinha position:absolute */
 .hcar__dots {
-  position: absolute; top: 12px; left: 0; right: 0;
-  display: flex; justify-content: center; gap: 6px; z-index: 2;
+  position: static; display: flex; justify-content: center; gap: 8px;
+  padding: 10px 0 2px; z-index: auto;
+  left: auto; right: auto; top: auto;
 }
 .hcar__dot {
-  width: 44px; height: 44px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%;
   background: transparent; border: none; cursor: pointer; padding: 0;
-  position: relative; flex-shrink: 0;
+  position: relative; flex-shrink: 0; touch-action: manipulation;
 }
 .hcar__dot::before {
   content: ''; position: absolute;
   top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 7px; height: 7px; border-radius: 50%;
-  background: rgba(255,255,255,0.35);
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
   transition: background 0.25s, transform 0.25s;
 }
-.hcar__dot--active::before { background: rgba(255,255,255,0.9); transform: translate(-50%,-50%) scale(1.4); }
+.hcar__dot--active::before { background: var(--accent); transform: translate(-50%,-50%) scale(1.3); }
 .hcar__dot--active { background: transparent; }
 @media (max-width: 640px) {
   .hcar-wrap { aspect-ratio: 4/3; }
-  .hcar__dots { bottom: 70px; }
+  .hcar__arrow { width: 32px; height: 32px; }
+  .hcar__arrow--prev { left: 6px; }
+  .hcar__arrow--next { right: 6px; }
 }
 .hero__placeholder {
   position: absolute; inset: 0;

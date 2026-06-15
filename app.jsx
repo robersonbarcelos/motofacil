@@ -269,13 +269,6 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
             <a className="btn btn--primary hcar__cta" href="#venda" style={{ background: t.accent, color: "#0A0A0A" }}>Ver moto</a>
           </div>
         </div>
-        {featured.length > 1 && (
-          <div className="hcar__dots">
-            {featured.map((_, i) => (
-              <button key={i} className={`hcar__dot${i === idx ? " hcar__dot--active" : ""}`} onClick={() => go(i)} aria-label={`Moto ${i + 1}`} style={i === idx ? { background: t.accent } : {}} />
-            ))}
-          </div>
-        )}
       </div>
       {featured.length > 1 && (
         <>
@@ -285,6 +278,11 @@ function HeroCarousel({ motos, t, p, priceCfg }) {
           <button className="hcar__arrow hcar__arrow--next" onClick={next} aria-label="Próxima">
             <svg viewBox="0 0 10 16" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 2l6 6-6 6"/></svg>
           </button>
+          <div className="hcar__dots">
+            {featured.map((_, i) => (
+              <button key={i} className={`hcar__dot${i === idx ? " hcar__dot--active" : ""}`} onClick={() => go(i)} aria-label={`Moto ${i + 1}`} style={i === idx ? { background: t.accent } : {}} />
+            ))}
+          </div>
         </>
       )}
     </div>
