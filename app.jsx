@@ -520,6 +520,26 @@ function Sale({ t, p, filters, motos, priceCfg }) {
   );
 }
 
+function CardPhotoCarousel({ fotos, name, radius }) {
+  const [fi, setFi] = useState(0);
+  const imgs = fotos && fotos.length > 0 ? fotos : MOTO_IMGS;
+  const total = imgs.length;
+  const prev = (e) => { e.stopPropagation(); setFi(i => (i - 1 + total) % total); };
+  const next = (e) => { e.stopPropagation(); setFi(i => (i + 1) % total); };
+  return (
+    <div className="card__img" style={{ borderRadius: `${radius}px ${radius}px 0 0` }}>
+      <img src={imgs[fi]} alt={name} loading="lazy" />
+      {total > 1 && (<>
+        <button className="card__carr-btn card__carr-btn--prev" onClick={prev} aria-label="Foto anterior">‹</button>
+        <button className="card__carr-btn card__carr-btn--next" onClick={next} aria-label="Próxima foto">›</button>
+        <div className="card__carr-dots">
+          {imgs.map((_, i) => <span key={i} className={`card__carr-dot${i === fi ? " card__carr-dot--on" : ""}`} />)}
+        </div>
+      </>)}
+    </div>
+  );
+}
+
 function MotoCard({ c, t, p, mode, idx, priceCfg }) {
   const cfg = priceCfg || {};
   const showPreco   = mode === "sale"   ? cfg.preco   !== false : cfg.preco_mensal !== false;
@@ -529,11 +549,10 @@ function MotoCard({ c, t, p, mode, idx, priceCfg }) {
   const priceLabel  = mode === "sale"
     ? (showPreco && c.price ? `R$ ${c.price.toLocaleString("pt-BR")}` : null)
     : (showPreco && c.month ? `R$ ${c.month.toLocaleString("pt-BR")}/mês` : (showDiaria ? `R$ ${c.day}/dia` : null));
-  const imgSrc = (c.fotos && c.fotos.length > 0) ? c.fotos[0] : MOTO_IMGS[idx % MOTO_IMGS.length];
   return (
     <article className="card" data-reveal style={{ "--d": `${idx * 80}ms`, borderRadius: t.radius }} data-cursor="hover">
-      <div className="card__img">
-        <img src={imgSrc} alt={c.name} loading="lazy" />
+      <div style={{ position: "relative" }}>
+        <CardPhotoCarousel fotos={c.fotos} name={c.name} radius={t.radius} />
         {c.pop && <span className="card__badge" style={{ background: t.accent, color: "#111" }}>POPULAR</span>}
         {mode === "rent" && <span className="card__badge card__badge--rent" style={{ background: t.accent2, color: "#fff" }}>ALUGUEL</span>}
       </div>
