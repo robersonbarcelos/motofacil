@@ -11,22 +11,8 @@ const wa = (msg) => `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`;
 const TIPO     = new URLSearchParams(window.location.search).get("tipo") || "venda";
 const IS_VENDA = TIPO === "venda";
 
-// ── Fallback seed (exibido enquanto Supabase carrega) ─────────────────────────
-const SEED_VENDA = [
-  { id:"s1", tipo:"venda", marca:"Honda",  modelo:"Biz 110i",     ano:2024, km:0,     preco:12990, entrada:2000, parcela:350, cor:"Vermelha", categoria:"urbana",   fotos:[], disponivel:true, destaque:true,  observacoes:"0 km · IPVA 2025 pago" },
-  { id:"s2", tipo:"venda", marca:"Honda",  modelo:"CG 160 Start", ano:2023, km:8500,  preco:14500, entrada:2500, parcela:380, cor:"Preta",    categoria:"urbana",   fotos:[], disponivel:true, destaque:false, observacoes:"Revisão em dia" },
-  { id:"s3", tipo:"venda", marca:"Honda",  modelo:"Fan 160",      ano:2024, km:0,     preco:16900, entrada:3000, parcela:450, cor:"Cinza",    categoria:"urbana",   fotos:[], disponivel:true, destaque:false, observacoes:"0 km" },
-  { id:"s4", tipo:"venda", marca:"Yamaha", modelo:"Factor 150",   ano:2023, km:12000, preco:14200, entrada:2500, parcela:375, cor:"Vermelha", categoria:"urbana",   fotos:[], disponivel:true, destaque:false, observacoes:"" },
-  { id:"s5", tipo:"venda", marca:"Yamaha", modelo:"Fazer 250",    ano:2024, km:0,     preco:21900, entrada:4000, parcela:580, cor:"Azul",     categoria:"esportiva",fotos:[], disponivel:true, destaque:true,  observacoes:"0 km · ABS incluso" },
-  { id:"s6", tipo:"venda", marca:"Honda",  modelo:"XRE 190 ABS",  ano:2023, km:15000, preco:19800, entrada:3500, parcela:520, cor:"Vermelha", categoria:"trail",    fotos:[], disponivel:true, destaque:false, observacoes:"ABS · Revisão em dia" },
-];
-const SEED_ALUGUEL = [
-  { id:"a1", tipo:"aluguel", marca:"Honda",  modelo:"Biz 110i",    ano:2024, preco_diaria:45, preco_semanal:270, preco_mensal:900,  cor:"Vermelha", categoria:"urbana", fotos:[], disponivel:true, destaque:true,  observacoes:"Manutenção inclusa · Sem fiador" },
-  { id:"a2", tipo:"aluguel", marca:"Honda",  modelo:"CG 160 Cargo",ano:2023, preco_diaria:55, preco_semanal:330, preco_mensal:1100, cor:"Preta",    categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Ideal para delivery · Manutenção inclusa" },
-  { id:"a3", tipo:"aluguel", marca:"Yamaha", modelo:"Factor 150",  ano:2023, preco_diaria:50, preco_semanal:300, preco_mensal:1000, cor:"Vermelha", categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Manutenção inclusa" },
-  { id:"a4", tipo:"aluguel", marca:"Honda",  modelo:"Pop 110i",    ano:2024, preco_diaria:38, preco_semanal:220, preco_mensal:700,  cor:"Branca",   categoria:"urbana", fotos:[], disponivel:true, destaque:false, observacoes:"Econômica · Ideal para começar" },
-];
-const SEED = IS_VENDA ? SEED_VENDA : SEED_ALUGUEL;
+// Sem seed — catálogo carrega apenas dados reais do banco
+const SEED = [];
 
 // Config padrão enquanto carrega
 const CFG_DEFAULT = {
@@ -195,6 +181,84 @@ function MotoCard({ moto, config, onPhoto }) {
   );
 }
 
+// ── Hero Carrossel (motos marcadas como Capa) ─────────────────────────────────
+function HeroCarousel({ motos, config, onPhoto }) {
+  const { useState: useS, useEffect: useE, useRef } = React;
+  const [idx, setIdx] = useS(0);
+  const timer = useRef(null);
+
+  const total = motos.length;
+  const next  = () => setIdx(i => (i + 1) % total);
+  const prev  = () => setIdx(i => (i - 1 + total) % total);
+
+  useE(() => {
+    if (total <= 1) return;
+    timer.current = setInterval(next, 5000);
+    return () => clearInterval(timer.current);
+  }, [total]);
+
+  const reset = (fn) => { clearInterval(timer.current); fn(); if (total > 1) timer.current = setInterval(next, 5000); };
+
+  if (!total) return null;
+  const m = motos[idx];
+  const thumb = m.fotos?.[0] || null;
+  const cfg = config[TIPO] || {};
+  const waMsg = IS_VENDA
+    ? `Olá! Tenho interesse na ${m.marca} ${m.modelo} (${m.ano}). Vi no catálogo.`
+    : `Olá! Tenho interesse no aluguel da ${m.marca} ${m.modelo}.`;
+
+  return (
+    <div className="hero-car">
+      <div className="hero-car__img" onClick={() => m.fotos?.length > 0 && onPhoto(m)}>
+        {thumb
+          ? <img src={thumb} alt={`${m.marca} ${m.modelo}`} />
+          : <div className="hero-car__nophoto"><span>📷</span><span>Foto em breve</span></div>
+        }
+        <div className="hero-car__overlay" />
+        <span className="hero-car__badge">CAPA</span>
+      </div>
+      <div className="hero-car__info">
+        <div className="hero-car__brand">{m.marca}</div>
+        <h2 className="hero-car__name">{m.modelo}</h2>
+        <div className="hero-car__meta">
+          {m.ano && <span>{m.ano}</span>}
+          {m.cor && <span>{m.cor}</span>}
+          {IS_VENDA && m.km != null && <span>{m.km === 0 ? "0 km" : `${Number(m.km).toLocaleString("pt-BR")} km`}</span>}
+        </div>
+        <div className="hero-car__price">
+          {IS_VENDA ? (
+            <>
+              {cfg.preco   && m.preco   && <div className="hero-car__preco">{fmt(m.preco)}</div>}
+              {cfg.entrada && m.entrada && <div className="hero-car__parcela">Entrada: <strong>{fmt(m.entrada)}</strong>{cfg.parcela && m.parcela ? ` · ${fmt(m.parcela)}/mês` : ""}</div>}
+            </>
+          ) : (
+            <>
+              {cfg.preco_mensal && m.preco_mensal && <div className="hero-car__preco">{fmt(m.preco_mensal)}<span>/mês</span></div>}
+              {cfg.preco_diaria && m.preco_diaria && <div className="hero-car__parcela">{fmt(m.preco_diaria)}/dia</div>}
+            </>
+          )}
+        </div>
+        {m.observacoes && <p className="hero-car__obs">{m.observacoes}</p>}
+        <a className="hero-car__cta" href={`https://wa.me/${WA_NUM}?text=${encodeURIComponent(waMsg)}`} target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          {IS_VENDA ? "Tenho interesse" : "Quero alugar"}
+        </a>
+      </div>
+      {total > 1 && (
+        <div className="hero-car__nav">
+          <button onClick={() => reset(prev)}>‹</button>
+          <div className="hero-car__dots">
+            {motos.map((_, i) => (
+              <button key={i} className={`hero-car__dot${i === idx ? " hero-car__dot--on" : ""}`} onClick={() => reset(() => setIdx(i))} />
+            ))}
+          </div>
+          <button onClick={() => reset(next)}>›</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Filtros ───────────────────────────────────────────────────────────────────
 function Filters({ motos, filters, setFilters }) {
   const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
@@ -275,14 +339,19 @@ function CatalogApp() {
       : "Motos para Aluguel · Moto Fácil Sertãozinho";
 
     Promise.all([
-      sb.from("motos").select("*").eq("tipo", TIPO).eq("disponivel", true).order("destaque", { ascending: false }).order("created_at", { ascending: false }),
+      sb.from("motos").select("*").eq("tipo", TIPO).eq("disponivel", true)
+        .order("capa",     { ascending: false })
+        .order("destaque", { ascending: false })
+        .order("created_at", { ascending: false }),
       sb.from("config").select("*").eq("id", "global").single(),
     ]).then(([{ data: motosData }, { data: cfgData }]) => {
-      if (motosData && motosData.length > 0) setMotos(motosData);
+      setMotos(motosData || []);
       if (cfgData) setConfig(transformConfig(cfgData));
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+
+  const capaMotos = useMemo(() => motos.filter(m => m.capa), [motos]);
 
   const filtered = useMemo(() => motos.filter(m => {
     if (filters.marca     && m.marca     !== filters.marca)     return false;
@@ -315,6 +384,13 @@ function CatalogApp() {
         <h1 className="cat-h1">{titulo}</h1>
         <p className="cat-sub">{subtitulo}</p>
       </div>
+
+      {!loading && capaMotos.length > 0 && (
+        <div className="cat-capa-wrap">
+          <p className="cat-capa-label">Em destaque</p>
+          <HeroCarousel motos={capaMotos} config={config} onPhoto={setCarousel} />
+        </div>
+      )}
 
       <div className="cat-layout">
         <Filters motos={motos} filters={filters} setFilters={setFilters} />

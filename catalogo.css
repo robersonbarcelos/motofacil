@@ -333,3 +333,81 @@ button { font-family: inherit; cursor: pointer; }
 .car-info { color: #ccc; font-size: 13px; text-align: center; }
 .car-info strong { color: #fff; }
 .car-counter     { color: #777; }
+
+/* ── Seção Capa / HeroCarousel ──────────────────────────────────────────────── */
+.cat-capa-wrap {
+  padding: 0 clamp(16px,4vw,48px) 32px;
+  max-width: 1200px; margin: 0 auto;
+}
+.cat-capa-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: #C9A84C;
+  margin-bottom: 12px;
+}
+.hero-car {
+  position: relative; display: grid;
+  grid-template-columns: 1fr 1fr; grid-template-rows: auto auto;
+  border-radius: 16px; overflow: hidden;
+  background: #141414; border: 1px solid #252218;
+  min-height: 340px;
+}
+.hero-car__img {
+  position: relative; grid-row: 1 / 3;
+  overflow: hidden; cursor: pointer; background: #111;
+}
+.hero-car__img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.hero-car__img:hover img { transform: scale(1.03); }
+.hero-car__overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,.15), transparent);
+  pointer-events: none;
+}
+.hero-car__badge {
+  position: absolute; top: 16px; left: 16px;
+  background: #C9A84C; color: #111;
+  font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  padding: 4px 10px; border-radius: 4px;
+}
+.hero-car__nophoto {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; min-height: 280px; gap: 8px; color: #9E9E9E; font-size: 13px;
+}
+.hero-car__nophoto span:first-child { font-size: 32px; }
+.hero-car__info {
+  padding: clamp(20px,3vw,36px); display: flex; flex-direction: column;
+  justify-content: center; gap: 10px;
+}
+.hero-car__brand { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #9E9E9E; }
+.hero-car__name {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: clamp(28px,4vw,42px); font-weight: 800; text-transform: uppercase; line-height: 1;
+}
+.hero-car__meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero-car__meta span { font-size: 12px; color: #9E9E9E; background: rgba(255,255,255,.05); padding: 3px 9px; border-radius: 4px; }
+.hero-car__preco { font-family: "Barlow Condensed", sans-serif; font-size: clamp(22px,3vw,32px); font-weight: 800; color: #C9A84C; }
+.hero-car__preco span { font-size: 14px; font-weight: 400; color: #9E9E9E; }
+.hero-car__parcela { font-size: 13px; color: #9E9E9E; }
+.hero-car__obs { font-size: 12px; color: #9E9E9E; }
+.hero-car__cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: 8px;
+  background: #25d366; color: #fff; font-weight: 700; font-size: 14px;
+  transition: opacity 0.15s; align-self: flex-start; text-decoration: none;
+}
+.hero-car__cta:hover { opacity: 0.88; }
+.hero-car__nav { grid-column: 2; padding: 0 clamp(20px,3vw,36px) 20px; display: flex; align-items: center; gap: 12px; }
+.hero-car__nav button {
+  background: rgba(255,255,255,.08); border: 1px solid #252218;
+  color: #fff; width: 32px; height: 32px; border-radius: 50%;
+  font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+}
+.hero-car__nav button:hover { background: rgba(255,255,255,.15); }
+.hero-car__dots { display: flex; gap: 6px; }
+.hero-car__dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.25); border: none; cursor: pointer; transition: background 0.15s; }
+.hero-car__dot--on { background: #C9A84C; }
+@media (max-width: 640px) {
+  .hero-car { grid-template-columns: 1fr; }
+  .hero-car__img { grid-row: 1; min-height: 220px; }
+  .hero-car__info { padding: 20px; }
+  .hero-car__nav { padding: 0 20px 16px; }
+}

@@ -97,7 +97,7 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
     km:0, preco:"", entrada:"", parcela:"",
     preco_diaria:"", preco_semanal:"", preco_mensal:"",
     cor:"", categoria:"urbana", fotos:[], disponivel:true,
-    destaque:false, observacoes:"",
+    destaque:false, capa:false, observacoes:"",
   };
   const [form,       setForm]       = useState(initial || blank);
   const [uploading,  setUploading]  = useState(false);
@@ -133,6 +133,15 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.modelo.trim()) { setErr("Modelo é obrigatório."); return; }
+    // Validação máx 3 por tipo de flag
+    if (form.destaque) {
+      const { count } = await sb.from("motos").select("id", { count: "exact", head: true }).eq("destaque", true).neq("id", form.id || "");
+      if (count >= 3) { setErr("Já existem 3 motos marcadas como Destaque. Remova uma antes de adicionar outra."); return; }
+    }
+    if (form.capa) {
+      const { count } = await sb.from("motos").select("id", { count: "exact", head: true }).eq("capa", true).neq("id", form.id || "");
+      if (count >= 3) { setErr("Já existem 3 motos marcadas como Capa. Remova uma antes de adicionar outra."); return; }
+    }
     setBusy(true); setErr("");
     const payload = {
       tipo: form.tipo, marca: form.marca, modelo: form.modelo.trim(),
@@ -145,7 +154,7 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
       preco_mensal:  form.tipo === "aluguel" ? (Number(form.preco_mensal)  || null) : null,
       cor: form.cor.trim(), categoria: form.categoria,
       fotos: form.fotos, disponivel: form.disponivel,
-      destaque: form.destaque, observacoes: form.observacoes.trim(),
+      destaque: form.destaque, capa: form.capa, observacoes: form.observacoes.trim(),
     };
     let result, error;
     if (isEdit) {
@@ -266,7 +275,11 @@ function MotoForm({ moto: initial, onSave, onCancel }) {
             </label>
             <label className="mf-check">
               <input type="checkbox" checked={form.destaque} onChange={e => set("destaque", e.target.checked)} />
-              Destaque
+              ★ Destaque <span className="mf-hint">(aparece primeiro na lista · máx. 3)</span>
+            </label>
+            <label className="mf-check">
+              <input type="checkbox" checked={form.capa} onChange={e => set("capa", e.target.checked)} />
+              🎯 Capa <span className="mf-hint">(aparece no carrossel hero · máx. 3)</span>
             </label>
           </div>
 
@@ -366,6 +379,7 @@ function MotosList({ motos, loading, onEdit, onToggle, onDelete }) {
                     {m.disponivel ? "Publicado" : "Oculto"}
                   </button>
                   {m.destaque && <span className="badge badge--dest">★ Destaque</span>}
+                  {m.capa     && <span className="badge badge--capa">🎯 Capa</span>}
                 </div>
               </td>
               <td>
@@ -506,6 +520,7 @@ function AdminApp() {
   const [form,    setForm]    = useState(null); // null | "new" | moto object
   const [msg,     setMsg]     = useState("");
   const [confirm, setConfirm] = useState(null);
+  const [filtro,  setFiltro]  = useState("todos"); // todos | destaque | capa | venda | aluguel
 
   // Auth state
   useEffect(() => {
@@ -567,10 +582,20 @@ function AdminApp() {
   if (!user)   return <Login onLogin={() => {}} />;
 
   const counts = {
-    venda:   motos.filter(m => m.tipo === "venda"   && m.disponivel).length,
-    aluguel: motos.filter(m => m.tipo === "aluguel" && m.disponivel).length,
-    ocultas: motos.filter(m => !m.disponivel).length,
+    venda:    motos.filter(m => m.tipo === "venda"   && m.disponivel).length,
+    aluguel:  motos.filter(m => m.tipo === "aluguel" && m.disponivel).length,
+    ocultas:  motos.filter(m => !m.disponivel).length,
+    destaque: motos.filter(m => m.destaque).length,
+    capa:     motos.filter(m => m.capa).length,
   };
+
+  const motosFiltradas = motos.filter(m => {
+    if (filtro === "destaque") return m.destaque;
+    if (filtro === "capa")     return m.capa;
+    if (filtro === "venda")    return m.tipo === "venda";
+    if (filtro === "aluguel")  return m.tipo === "aluguel";
+    return true;
+  });
 
   return (
     <div className="adm">
@@ -600,9 +625,24 @@ function AdminApp() {
         )}
       </div>
 
+      {/* Filtros de motos */}
+      {tab === "motos" && (
+        <div className="adm-filtros">
+          {[
+            ["todos",    `Todas (${motos.length})`],
+            ["venda",    `Venda (${counts.venda})`],
+            ["aluguel",  `Aluguel (${counts.aluguel})`],
+            ["destaque", `★ Destaque (${counts.destaque}/3)`],
+            ["capa",     `🎯 Capa (${counts.capa}/3)`],
+          ].map(([k, l]) => (
+            <button key={k} className={`adm-filtro${filtro === k ? " adm-filtro--on" : ""}`} onClick={() => setFiltro(k)}>{l}</button>
+          ))}
+        </div>
+      )}
+
       {/* Conteúdo */}
       <div className="adm-body">
-        {tab === "motos"  && <MotosList motos={motos} loading={mLoading} onEdit={setForm} onToggle={handleToggle} onDelete={handleDelete} />}
+        {tab === "motos"  && <MotosList motos={motosFiltradas} loading={mLoading} onEdit={setForm} onToggle={handleToggle} onDelete={handleDelete} />}
         {tab === "config" && <ConfigPanel onMsg={showMsg} />}
         {tab === "log"    && <AuditLog />}
       </div>
